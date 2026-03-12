@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#6C63FF"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Wellness OS"/>
+  <title>Wellness OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --radius-sm: 12px; --radius-md: 16px; --radius-lg: 22px; --radius-xl: 28px;
+      --transition: 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      --transition-fast: 0.15s ease;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Sora', sans-serif; background: var(--bg); color: var(--text); overscroll-behavior: none; transition: background 0.3s ease; }
+    #app { height: 100dvh; display: flex; flex-direction: column; max-width: 640px; margin: 0 auto; position: relative; overflow: hidden; }
+    #scroll-area { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+    #scroll-area::-webkit-scrollbar { width: 2px; }
+    #scroll-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    .content { padding: 16px 18px 110px; }
+
+    /* ── TOPBAR ── */
+    .topbar {
+      position: sticky; top: 0; z-index: 100;
+      backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--border); padding: 13px 18px 11px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .logo-text { font-family: 'Instrument Serif', serif; font-size: 21px; font-weight: 400; font-style: italic; letter-spacing: -0.3px; }
+
+    /* ── BOTTOM NAV ── */
+    .bottomnav {
+      position: sticky; bottom: 0; border-top: 1px solid var(--border);
+      display: flex; backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+      z-index: 100; flex-shrink: 0; background: color-mix(in srgb, var(--surface) 92%, transparent);
+    }
+    .navbtn { flex: 1; padding: 10px 0 max(12px, env(safe-area-inset-bottom)); background: none; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px; position: relative; transition: all 0.2s; font-family: inherit; }
+    .navbtn .navicon { font-size: 19px; transition: transform var(--transition); }
+    .navbtn.active .navicon { transform: scale(1.18); }
+    .navbtn .navlabel { font-size: 9.5px; font-weight: 500; letter-spacing: 0.4px; transition: color 0.2s; }
+    .navbtn.active .navlabel { font-weight: 700; }
+    .nav-pip { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 2.5px; border-radius: 0 0 4px 4px; display: none; }
+    .navbtn.active .nav-pip { display: block; }
+
+    /* ── CARDS ── */
+    .card { border-radius: var(--radius-lg); border: 1px solid var(--border); background: var(--card); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 12px; }
+    .card-body { padding: 16px; }
+    .card-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .card-title { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.1px; }
+
+    /* ── ANIMATIONS ── */
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .tab-content { animation: tabIn 0.22s ease; }
+    @keyframes tabIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes popIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+    @keyframes fireFlicker { 0%,100%{transform:scale(1) rotate(-2deg);} 50%{transform:scale(1.1) rotate(2deg);} }
+    @keyframes ripple { to { transform: scale(3); opacity: 0; } }
+    @keyframes waveAnim { 0%,100%{d:path("M0,8 C20,4 40,12 60,8 C80,4 100,12 120,8 L120,20 L0,20 Z")} 50%{d:path("M0,10 C20,14 40,6 60,10 C80,14 100,6 120,10 L120,20 L0,20 Z")} }
+
+    /* ── MODAL ── */
+    .modal-bg { position: fixed; inset: 0; background: #0009; z-index: 999; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.18s ease; }
+    .modal-box { border-radius: var(--radius-xl) var(--radius-xl) 0 0; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto; padding: 22px; animation: slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1); background: var(--card); border-top: 1px solid var(--border); }
+    .modal-handle { width: 36px; height: 4px; border-radius: 99px; background: var(--border); margin: 0 auto 20px; }
+
+    /* ── BUTTONS ── */
+    .btn { border: none; cursor: pointer; font-family: inherit; font-weight: 600; border-radius: var(--radius-sm); padding: 9px 15px; transition: all var(--transition-fast); font-size: 12.5px; position: relative; overflow: hidden; }
+    .btn:active { transform: scale(0.95); }
+    .btn-accent { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent); }
+    .btn-surface { background: var(--surface); color: var(--sub); border: 1px solid var(--border); }
+    .btn-danger { background: #E11D4810; color: #E11D48; border: 1px solid #E11D4828; }
+    .btn-solid { background: var(--accent); color: #fff; border: 1px solid transparent; box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent); }
+    .btn-full { display: block; width: 100%; padding: 13px; border-radius: var(--radius-md); font-size: 14px; font-weight: 700; text-align: center; }
+
+    /* ── CHECK ROW ── */
+    .check-row { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--transition-fast); }
+    .check-row:last-child { border-bottom: none; }
+    .check-row:active { background: var(--surface); }
+    .check-box { width: 21px; height: 21px; border-radius: 7px; border: 2px solid var(--border); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; font-size: 10px; font-weight: 800; color: #fff; }
+    .check-label { font-size: 13px; font-weight: 500; flex: 1; transition: all 0.2s; line-height: 1.3; }
+    .check-label.done { text-decoration: line-through; color: var(--muted); }
+
+    /* ── PROGRESS ── */
+    .prog-track { height: 4px; border-radius: 99px; overflow: hidden; margin: 6px 0 12px; background: color-mix(in srgb, var(--text) 8%, transparent); }
+    .prog-fill { height: 100%; border-radius: 99px; transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+
+    /* ── INPUTS ── */
+    input, textarea, select { font-family: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 13px; color: var(--text); font-size: 13.5px; outline: none; width: 100%; transition: border-color 0.15s; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+    textarea { resize: vertical; line-height: 1.6; }
+    select option { background: var(--card); }
+
+    /* ── LAYOUT UTILS ── */
+    .section-label { font-size: 10px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; margin-bottom: 10px; color: var(--muted); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .flex-row { display: flex; align-items: center; gap: 9px; }
+    .flex-between { display: flex; align-items: center; justify-content: space-between; }
+    .empty-state { text-align: center; padding: 14px 0; color: var(--muted); font-size: 13px; }
+    h1.page-title { font-family: 'Instrument Serif', serif; font-size: 28px; font-weight: 400; font-style: italic; margin-bottom: 20px; color: var(--text); }
+
+    /* ── HERO CARD ── */
+    .hero-card { border-radius: var(--radius-xl); padding: 22px; margin-bottom: 14px; position: relative; overflow: hidden; border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); }
+    .hero-orb { position: absolute; border-radius: 50%; pointer-events: none; }
+
+    /* ── STAT CARDS ── */
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px; box-shadow: var(--shadow); transition: transform var(--transition); cursor: default; }
+    .stat-card:active { transform: scale(0.97); }
+    .stat-val { font-size: 22px; font-weight: 800; margin-top: 5px; font-family: 'Instrument Serif', serif; }
+    .stat-lbl { font-size: 10px; color: var(--muted); margin-top: 2px; font-weight: 600; letter-spacing: 0.3px; }
+
+    /* ── SECTION RINGS (home) ── */
+    .section-rings { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; margin-bottom: 12px; }
+    .ring-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: var(--shadow); }
+    .ring-label { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; text-align: center; color: var(--sub); }
+
+    /* ── MOOD ── */
+    .mood-strip { display: flex; gap: 6px; }
+    .mood-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 3px; border-radius: var(--radius-md); border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; transition: all var(--transition); font-family: inherit; }
+    .mood-btn.sel { transform: scale(1.07); }
+    .mood-emoji { font-size: 20px; line-height: 1; transition: transform var(--transition); }
+    .mood-btn.sel .mood-emoji { transform: scale(1.15); }
+    .mood-lbl { font-size: 8.5px; font-weight: 700; letter-spacing: 0.2px; text-transform: uppercase; }
+
+    /* ── WATER ── */
+    .water-unit-toggle { display: flex; gap: 6px; margin-bottom: 12px; }
+    .unit-btn { flex: 1; padding: 8px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; font-size: 12px; font-weight: 700; text-align: center; font-family: inherit; transition: all 0.18s; color: var(--sub); }
+    .unit-btn.active { border-color: #0284c7; color: #0284c7; background: #0284c712; }
+    .water-visual { display: flex; gap: 5px; align-items: flex-end; justify-content: center; margin: 8px 0; }
+    .water-drop { width: 30px; height: 38px; cursor: pointer; position: relative; transition: all var(--transition); }
+    .water-drop svg { width: 100%; height: 100%; }
+    .water-drop:active { transform: scale(0.88); }
+    .water-info { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+
+    /* ── SLEEP ── */
+    .sleep-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .sleep-big { font-family: 'Instrument Serif', serif; font-size: 36px; font-weight: 400; font-style: italic; color: #818cf8; line-height: 1; }
+    .sleep-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 99px; outline: none; cursor: pointer; }
+    .sleep-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #818cf8; cursor: pointer; box-shadow: 0 2px 10px #818cf855; transition: transform 0.15s; }
+    .sleep-slider::-webkit-slider-thumb:active { transform: scale(1.25); }
+    .sleep-q { display: flex; gap: 5px; margin-top: 11px; }
+    .sleep-q-btn { flex: 1; padding: 7px 3px; border-radius: 9px; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; font-size: 11px; font-weight: 700; text-align: center; font-family: inherit; transition: all 0.18s; color: var(--sub); }
+    .sleep-q-btn.on { border-color: #818cf8; color: #818cf8; background: #818cf812; }
+
+    /* ── DOOM SCROLL ── */
+    .doom-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 5px; border-radius: 99px; outline: none; cursor: pointer; margin: 10px 0 6px; }
+    .doom-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; transition: transform 0.15s; }
+    .doom-slider::-webkit-slider-thumb:active { transform: scale(1.25); }
+    .doom-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); font-weight: 600; }
+
+    /* ── CALENDAR ── */
+    .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; }
+    .cal-day { border-radius: 10px; padding: 6px 2px 4px; cursor: pointer; text-align: center; border: 1px solid var(--border); background: var(--card); transition: all var(--transition); }
+    .cal-day:active { transform: scale(0.93); }
+    .cal-day.today { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+    .cal-day.selected { background: var(--accent); border-color: var(--accent); transform: scale(1.07); box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 38%, transparent); }
+    .cal-mood-strip { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; margin-top: 8px; }
+    .cal-mood-cell { height: 5px; border-radius: 99px; }
+
+    /* ── HEATMAP ── */
+    .hm-grid { display: grid; grid-template-columns: repeat(13,1fr); gap: 3px; }
+    .hm-cell { aspect-ratio: 1; border-radius: 4px; cursor: pointer; transition: transform 0.15s; }
+    .hm-cell:hover { transform: scale(1.35); z-index: 1; position: relative; }
+
+    /* ── PHOTOS ── */
+    .photo-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
+    .photo-thumb { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1; }
+    .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .photo-del { position: absolute; top: 4px; right: 4px; background: #000a; border: none; color: #fff; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+
+    /* ── ACHIEVEMENT BADGES ── */
+    .badge-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .badge-item { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 11px 5px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); text-align: center; transition: all 0.2s; }
+    .badge-item.unlocked { border-color: color-mix(in srgb, var(--accent) 35%, transparent); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+    .badge-icon { font-size: 24px; filter: grayscale(1) opacity(0.3); transition: filter 0.3s; }
+    .badge-item.unlocked .badge-icon { filter: none; }
+    .badge-lbl { font-size: 8.5px; font-weight: 700; color: var(--muted); letter-spacing: 0.2px; text-transform: uppercase; line-height: 1.3; }
+    .badge-item.unlocked .badge-lbl { color: var(--sub); }
+
+    /* ── PIN ── */
+    .pin-overlay { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .pin-card { width: calc(100% - 48px); max-width: 340px; border-radius: var(--radius-xl); padding: 32px 24px; border: 1px solid var(--border); background: var(--card); box-shadow: 0 32px 80px #00000055; animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1); }
+    .pin-dots { display: flex; gap: 14px; justify-content: center; margin: 16px 0 22px; }
+    .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--border); background: transparent; transition: all 0.18s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.12); }
+    .pin-dot.error { background: #E11D48; border-color: #E11D48; animation: shake 0.4s ease; }
+    .pin-pad { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+    .pin-key { padding: 17px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 19px; font-weight: 700; text-align: center; transition: all 0.14s; font-family: 'Instrument Serif', serif; color: var(--text); }
+    .pin-key:active { transform: scale(0.92); background: color-mix(in srgb, var(--accent) 13%, var(--surface)); border-color: var(--accent); }
+    .pin-key.del { background: color-mix(in srgb, #E11D48 10%, transparent); color: #E11D48; border-color: #E11D4825; font-family: 'Sora', sans-serif; font-size: 16px; }
+    .pin-key.zero { grid-column: 2; }
+
+    /* ── THEME BUTTONS ── */
+    .theme-btn { padding: 12px 13px; border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; font-family: inherit; border: 2px solid transparent; }
+    .accent-pill { padding: 8px 16px; border-radius: 99px; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; font-weight: 700; font-size: 12px; font-family: inherit; }
+
+    /* ── MINI CHIPS ── */
+    .mini-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--sub); }
+    .today-bar { display: flex; gap: 7px; margin-bottom: 13px; overflow-x: auto; padding-bottom: 2px; }
+    .today-bar::-webkit-scrollbar { display: none; }
+    .t-chip { display: flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 99px; font-size: 11px; font-weight: 600; border: 1.5px solid var(--border); background: var(--surface); cursor: pointer; white-space: nowrap; transition: all 0.18s; flex-shrink: 0; color: var(--sub); }
+    .t-chip.active { font-weight: 700; }
+
+    canvas { max-height: 180px; }
+    .ring-svg text { font-family: 'Sora', sans-serif; font-weight: 800; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="topbar" id="topbar">
+    <div>
+      <div class="logo-text" id="logo">Wellness OS</div>
+      <div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;margin-top:1px;font-weight:600;color:var(--muted)">Personal Growth</div>
+    </div>
+    <div class="flex-row" style="gap:8px">
+      <div id="status-dot" style="width:7px;height:7px;border-radius:50%;"></div>
+      <span id="status-pct" style="font-size:12px;font-weight:700;color:var(--sub);"></span>
+    </div>
+  </div>
+
+  <div id="scroll-area">
+    <div class="content" id="content"></div>
+  </div>
+
+  <nav class="bottomnav" id="bottomnav">
+    <button class="navbtn active" data-tab="home" onclick="switchTab('home')">
+      <div class="nav-pip" id="pip-home"></div>
+      <span class="navicon">🏠</span><span class="navlabel">Home</span>
+    </button>
+    <button class="navbtn" data-tab="calendar" onclick="switchTab('calendar')">
+      <div class="nav-pip" id="pip-calendar"></div>
+      <span class="navicon">📅</span><span class="navlabel">Calendar</span>
+    </button>
+    <button class="navbtn" data-tab="analytics" onclick="switchTab('analytics')">
+      <div class="nav-pip" id="pip-analytics"></div>
+      <span class="navicon">📊</span><span class="navlabel">Analytics</span>
+    </button>
+    <button class="navbtn" data-tab="settings" onclick="switchTab('settings')">
+      <div class="nav-pip" id="pip-settings"></div>
+      <span class="navicon">⚙️</span><span class="navlabel">Settings</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════════════
+const THEMES = {
+  amoled:  {name:"AMOLED",      icon:"◼", dark:true,  bg:"#000000",surface:"#0c0c0c",card:"#121212",border:"#202020",text:"#f5f5f5",sub:"#888",muted:"#2e2e2e",shadow:"0 4px 28px #00000099"},
+  space:   {name:"Deep Space",  icon:"🌌", dark:true,  bg:"#05050f",surface:"#0d0d20",card:"#111128",border:"#1c1c38",text:"#eaeaff",sub:"#7070aa",muted:"#2a2a50",shadow:"0 4px 28px #00000077"},
+  carbon:  {name:"Carbon",      icon:"🖤", dark:true,  bg:"#0a0a0a",surface:"#141414",card:"#1a1a1a",border:"#2a2a2a",text:"#f0f0f0",sub:"#707070",muted:"#252525",shadow:"0 4px 24px #00000066"},
+  navy:    {name:"Midnight",    icon:"🌊", dark:true,  bg:"#030b18",surface:"#071020",card:"#0a1428",border:"#122035",text:"#e8f2ff",sub:"#5588aa",muted:"#152030",shadow:"0 4px 24px #00000066"},
+  forest:  {name:"Forest",      icon:"🌿", dark:true,  bg:"#030a05",surface:"#081210",card:"#0d1a10",border:"#162618",text:"#e5f5ea",sub:"#5a9a70",muted:"#182820",shadow:"0 4px 20px #00000055"},
+  ember:   {name:"Ember",       icon:"🔥", dark:true,  bg:"#0c0603",surface:"#160a04",card:"#1e0f06",border:"#321808",text:"#fff3ea",sub:"#bb6633",muted:"#2a1005",shadow:"0 4px 20px #00000055"},
+  light:   {name:"Clean Light", icon:"☀️", dark:false, bg:"#f6f7fb",surface:"#ffffff",card:"#ffffff",border:"#e6e9f0",text:"#181830",sub:"#606880",muted:"#c0c8d8",shadow:"0 4px 20px #0000000e"},
+  linen:   {name:"Linen",       icon:"🌸", dark:false, bg:"#fdf5ec",surface:"#ffffff",card:"#fffaf5",border:"#eadece",text:"#2a1a0a",sub:"#8a6a48",muted:"#d0b898",shadow:"0 4px 18px #0000000c"},
+  slate:   {name:"Slate",       icon:"🩶", dark:false, bg:"#eef0f6",surface:"#ffffff",card:"#ffffff",border:"#d8dce8",text:"#1c2040",sub:"#5060808",muted:"#a8b0c8",shadow:"0 4px 20px #00000010"},
+};
+const ACCENTS = {
+  violet: {name:"Violet",  p:"#7C3AED", g:"linear-gradient(135deg,#7C3AED,#A78BFA)"},
+  indigo: {name:"Indigo",  p:"#6C63FF", g:"linear-gradient(135deg,#6C63FF,#818cf8)"},
+  cyan:   {name:"Cyan",    p:"#0891b2", g:"linear-gradient(135deg,#0891b2,#06b6d4)"},
+  emerald:{name:"Emerald", p:"#059669", g:"linear-gradient(135deg,#059669,#10b981)"},
+  rose:   {name:"Rose",    p:"#e11d48", g:"linear-gradient(135deg,#e11d48,#fb7185)"},
+  amber:  {name:"Amber",   p:"#d97706", g:"linear-gradient(135deg,#d97706,#f59e0b)"},
+  teal:   {name:"Teal",    p:"#0d9488", g:"linear-gradient(135deg,#0d9488,#14b8a6)"},
+};
+const DEF_PHYS = [
+  {id:"p1",label:"Morning Routine",          icon:"🌅"},
+  {id:"p2",label:"Night Routine",            icon:"🌙"},
+  {id:"p3",label:"Daily Stretching",         icon:"🤸"},
+  {id:"p4",label:"Water Intake (2L+)",       icon:"💧"},
+  {id:"p5",label:"Healthy Food",             icon:"🥗"},
+  {id:"p6",label:"No Cheat Meal",            icon:"🚫"},
+  {id:"p7",label:"Daily Hygiene",            icon:"🧼"},
+  {id:"p8",label:"Workout",                  icon:"💪"},
+  {id:"p9",label:"No Fapping / No Watching", icon:"🔒"},
+];
+const DEF_MENT = [
+  {id:"m1",label:"Daily Lecture (1+)",       icon:"🎓"},
+  {id:"m2",label:"Self-Study Session",       icon:"📖"},
+  {id:"m3",label:"Book Reading",             icon:"📚"},
+  {id:"m4",label:"No Doom Scrolling",        icon:"📵"},
+  {id:"m5",label:"Mindfulness / Meditation", icon:"🧘"},
+];
+const DEF_FAM = [
+  {id:"f1",label:"Called / Talked to Family",icon:"📞"},
+  {id:"f2",label:"Quality Time",             icon:"❤️"},
+  {id:"f3",label:"Helped Someone",           icon:"🤝"},
+];
+const DEF_WO = {0:[],1:["Push Ups","Bench Press","Shoulder Press"],2:["Running","Cycling"],3:["Pull Ups","Rows","Bicep Curls"],4:["Rest / Light Walk"],5:["Squats","Lunges","Leg Press"],6:["HIIT","Core","Plank"]};
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MOODS=[
+  {id:"awful",emoji:"😩",label:"Awful", color:"#e11d48"},
+  {id:"bad",  emoji:"😔",label:"Bad",   color:"#f97316"},
+  {id:"meh",  emoji:"😐",label:"Meh",   color:"#eab308"},
+  {id:"good", emoji:"🙂",label:"Good",  color:"#22c55e"},
+  {id:"great",emoji:"😄",label:"Great", color:"#6c63ff"},
+];
+const SLEEP_Q=["Poor","Okay","Good","Great"];
+const ACHIEVEMENTS=[
+  {id:"first_day", icon:"🌱",label:"First Step",   check:s=>Object.keys(s.checks).length>=1},
+  {id:"streak3",   icon:"🔥",label:"3-Day Fire",   check:s=>getStreakFor(s)>=3},
+  {id:"streak7",   icon:"⚡",label:"Week Warrior", check:s=>getStreakFor(s)>=7},
+  {id:"streak30",  icon:"👑",label:"Month King",   check:s=>getStreakFor(s)>=30},
+  {id:"perfect",   icon:"💎",label:"Perfect Day",  check:s=>Object.keys(s.checks).some(d=>getEffFor(d,s)===100)},
+  {id:"hydrated",  icon:"💧",label:"Hydrated",     check:s=>Object.values(s.water||{}).some(v=>v>=8)},
+  {id:"earlybird", icon:"🌅",label:"Mood Logger",  check:s=>Object.keys(s.mood||{}).length>=5},
+  {id:"sleepking", icon:"😴",label:"Sleep King",   check:s=>Object.values(s.sleep||{}).filter(v=>v&&v.hours>=8).length>=3},
+  {id:"photos",    icon:"📷",label:"Photographer", check:s=>Object.values(s.photos||{}).flat().length>=5},
+  {id:"tracked7",  icon:"📅",label:"Week Tracker", check:s=>Object.keys(s.checks).length>=7},
+  {id:"nodoom",    icon:"📵",label:"Focus Master", check:s=>Object.values(s.doom||{}).filter(v=>v<=30&&v>=0).length>=7},
+  {id:"all3",      icon:"🏆",label:"All-Rounder",  check:s=>Object.keys(s.checks).some(d=>{const ch=s.checks[d]||{};return s.ptasks.every(t=>ch[t.id])&&s.mtasks.every(t=>ch[t.id])&&s.ftasks.every(t=>ch[t.id]);})},
+];
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const LS={
+  get:(k,d)=>{try{const v=localStorage.getItem(k);return v!=null?JSON.parse(v):d;}catch{return d;}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+};
+let S={
+  themeKey:   LS.get("wo_theme","amoled"),
+  accentKey:  LS.get("wo_accent","violet"),
+  tab:        "home",
+  dayView:    false,
+  selDate:    null,
+  calYear:    new Date().getFullYear(),
+  calMonth:   new Date().getMonth(),
+  editSec:    null,
+  showWoEd:   false,
+  waterUnit:  LS.get("wo_wunit","cups"),   // cups | litres
+  pinEnabled: LS.get("wo_pin_en",false),
+  pinHash:    LS.get("wo_pin_hash",""),
+  pinUnlocked:false,
+  ptasks:     LS.get("wo_ptasks",DEF_PHYS),
+  mtasks:     LS.get("wo_mtasks",DEF_MENT),
+  ftasks:     LS.get("wo_ftasks",DEF_FAM),
+  checks:     LS.get("wo_checks",{}),
+  notes:      LS.get("wo_notes",{}),
+  photos:     LS.get("wo_photos",{}),
+  workout:    LS.get("wo_workout",DEF_WO),
+  rewards:    LS.get("wo_rewards",{}),
+  exceptions: LS.get("wo_except",{}),
+  extra:      LS.get("wo_extra",{}),
+  doom:       LS.get("wo_doom",{}),
+  mood:       LS.get("wo_mood",{}),
+  water:      LS.get("wo_water",{}),
+  sleep:      LS.get("wo_sleep",{}),
+};
+
+function persist(){
+  LS.set("wo_theme",S.themeKey);    LS.set("wo_accent",S.accentKey);
+  LS.set("wo_ptasks",S.ptasks);     LS.set("wo_mtasks",S.mtasks);    LS.set("wo_ftasks",S.ftasks);
+  LS.set("wo_checks",S.checks);     LS.set("wo_notes",S.notes);      LS.set("wo_photos",S.photos);
+  LS.set("wo_workout",S.workout);   LS.set("wo_rewards",S.rewards);  LS.set("wo_except",S.exceptions);
+  LS.set("wo_extra",S.extra);       LS.set("wo_doom",S.doom);
+  LS.set("wo_mood",S.mood);         LS.set("wo_water",S.water);      LS.set("wo_sleep",S.sleep);
+  LS.set("wo_pin_en",S.pinEnabled); LS.set("wo_pin_hash",S.pinHash); LS.set("wo_wunit",S.waterUnit);
+}
+
+// ═══════════════════════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════════════════════
+function applyTheme(){
+  const Th=THEMES[S.themeKey]||THEMES.amoled, Ac=ACCENTS[S.accentKey]||ACCENTS.violet;
+  const r=document.documentElement.style;
+  ['bg','surface','card','border','text','sub','muted','shadow'].forEach(k=>r.setProperty('--'+k,Th[k]));
+  r.setProperty('--accent',Ac.p); r.setProperty('--grad',Ac.g);
+  document.body.style.background=Th.bg; document.body.style.color=Th.text;
+  const tb=document.getElementById("topbar");
+  if(tb) tb.style.background=Th.bg+'f2';
+  const logo=document.getElementById("logo");
+  if(logo){logo.style.background=Ac.g;logo.style.webkitBackgroundClip="text";logo.style.webkitTextFillColor="transparent";}
+  document.querySelectorAll(".nav-pip").forEach(p=>p.style.background=Ac.p);
+  document.querySelectorAll(".navbtn.active .navlabel").forEach(l=>l.style.color=Ac.p);
+  const bn=document.querySelector("#bottomnav"); if(bn) bn.style.borderTopColor=Th.border;
+  if(window.Chart){Chart.defaults.color=Th.sub;Chart.defaults.borderColor=Th.border;}
+}
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+const todayStr=()=>new Date().toISOString().slice(0,10);
+const dkey=(y,m,d)=>`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+const allTasks=()=>[...S.ptasks,...S.mtasks,...S.ftasks];
+function getEff(date){
+  const ch=S.checks[date]||{},ex=S.extra[date]||[];
+  const all=allTasks(),total=all.length+ex.length; if(!total)return 0;
+  return Math.round((all.filter(t=>ch[t.id]).length+ex.filter(t=>t.done).length)/total*100);
+}
+function getEffFor(date,st){
+  const ch=st.checks[date]||{},ex=st.extra[date]||[];
+  const all=[...st.ptasks,...st.mtasks,...st.ftasks],total=all.length+ex.length; if(!total)return 0;
+  return Math.round((all.filter(t=>ch[t.id]).length+ex.filter(t=>t.done).length)/total*100);
+}
+function getStreak(){return getStreakFor(S);}
+function getStreakFor(st){
+  let s=0;const d=new Date();
+  for(let i=0;i<365;i++){const k=d.toISOString().slice(0,10);if(getEffFor(k,st)>=50){s++;d.setDate(d.getDate()-1);}else break;}
+  return s;
+}
+const last7=()=>Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(6-i));return d.toISOString().slice(0,10);});
+const last30=()=>Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(29-i));return d.toISOString().slice(0,10);});
+const lastN=n=>Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(n-1-i));return d.toISOString().slice(0,10);});
+const A=()=>ACCENTS[S.accentKey]||ACCENTS.violet;
+const T=()=>THEMES[S.themeKey]||THEMES.amoled;
+function hashPin(pin){let h=5381;for(let i=0;i<pin.length;i++)h=((h<<5)+h)+pin.charCodeAt(i);return h.toString(36);}
+function getUnlocked(){return ACHIEVEMENTS.filter(a=>{try{return a.check(S);}catch{return false;}});}
+function hmColor(p){
+  if(!p)return T().dark?"#181818":"#f0f0f0";
+  if(p<=25)return T().dark?"#1a2e1a":"#dcfce7";
+  if(p<=50)return T().dark?"#1a4020":"#4ade80";
+  if(p<=75)return T().dark?"#166030":"#16a34a";
+  if(p<100)return T().dark?"#157040":"#15803d";
+  return "#10b981";
+}
+const moodColor=id=>{const m=MOODS.find(x=>x.id===id);return m?m.color:"var(--muted)";};
+const moodEmoji=id=>{const m=MOODS.find(x=>x.id===id);return m?m.emoji:"";};
+// Water helpers
+const WATER_MAX_CUPS=8, WATER_MAX_L=2.0;
+function waterLabel(val){return S.waterUnit==='litres'?(val*0.25).toFixed(2)+'L':val+'/8 cups';}
+function waterGoalReached(val){return val>=8;}
+
+// ═══════════════════════════════════════════════════════
+// SCROLL REVEAL
+// ═══════════════════════════════════════════════════════
+function initReveal(){
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("visible");io.unobserve(e.target);}});},{threshold:0.04});
+  document.querySelectorAll(".reveal").forEach(el=>io.observe(el));
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════
+let chartInst={};
+function destroyCharts(){Object.values(chartInst).forEach(c=>{try{c.destroy();}catch{}});chartInst={};}
+function render(){
+  if(S.pinEnabled&&!S.pinUnlocked){showPinLock();return;}
+  destroyCharts(); applyTheme(); updateNav(); updateStatus();
+  document.getElementById("content").innerHTML=`<div class="tab-content">${buildContent()}</div>`;
+  requestAnimationFrame(()=>{initReveal();initCharts();});
+}
+function updateNav(){
+  document.querySelectorAll(".navbtn").forEach(b=>{
+    const on=b.dataset.tab===S.tab;
+    b.classList.toggle("active",on);
+    b.querySelector(".navlabel").style.color=on?A().p:T().muted;
+    b.querySelector(".nav-pip").style.background=A().p;
+  });
+}
+function updateStatus(){
+  const e=getEff(todayStr());
+  const col=e===100?"#10b981":e>50?A().p:"#e11d48";
+  const dot=document.getElementById("status-dot");
+  if(dot){dot.style.background=col;dot.style.boxShadow=`0 0 7px ${col}`;}
+  const sp=document.getElementById("status-pct");
+  if(sp)sp.textContent=`${e}%`;
+}
+function buildContent(){
+  if(S.tab==="calendar")return S.dayView?buildDayView():buildCalendar();
+  if(S.tab==="analytics")return buildAnalytics();
+  if(S.tab==="settings")return buildSettings();
+  return buildHome();
+}
+
+// ═══════════════════════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════════════════════
+function buildHome(){
+  const today=todayStr(),eff=getEff(today),checks=S.checks[today]||{};
+  const all=allTasks(),done=all.filter(t=>checks[t.id]).length;
+  const streak=getStreak();
+  const todayMood=S.mood[today],todayWater=S.water[today]||0,todaySleep=S.sleep[today];
+  const pDone=S.ptasks.filter(t=>checks[t.id]).length,pTot=S.ptasks.length;
+  const mDone=S.mtasks.filter(t=>checks[t.id]).length,mTot=S.mtasks.length;
+  const fDone=S.ftasks.filter(t=>checks[t.id]).length,fTot=S.ftasks.length;
+  const secs=[
+    {label:"Physical",tasks:S.ptasks,color:"#e11d48",icon:"💪",done:pDone,tot:pTot},
+    {label:"Mental",  tasks:S.mtasks,color:"#6c63ff",icon:"🧠",done:mDone,tot:mTot},
+    {label:"Family",  tasks:S.ftasks,color:"#059669",icon:"❤️",done:fDone,tot:fTot},
+  ];
+  const streakFire=streak>0?`<span style="animation:fireFlicker 1.4s ease-in-out infinite;display:inline-block">🔥</span>`:'';
+
+  return `
+    <!-- HERO -->
+    <div class="reveal hero-card" style="background:${T().dark?`linear-gradient(145deg,${A().p}1e,${A().p}08)`:`linear-gradient(145deg,${A().p}0f,${A().p}05)`}">
+      <div class="hero-orb" style="width:180px;height:180px;top:-70px;right:-50px;background:${A().p}12;"></div>
+      <div class="hero-orb" style="width:80px;height:80px;bottom:-30px;left:20px;background:${A().p}0a;"></div>
+      <div style="font-size:10px;color:var(--sub);letter-spacing:2.5px;text-transform:uppercase;font-weight:700;margin-bottom:5px">TODAY</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:22px;font-style:italic;color:var(--text);margin-bottom:3px">${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;margin:10px 0 14px">
+        <span style="font-family:'Instrument Serif',serif;font-size:58px;line-height:1;color:${A().p};font-style:italic">${eff}%</span>
+        <div style="margin-bottom:12px">
+          <div style="font-size:13px;color:var(--sub);font-weight:600">${done}/${all.length} tasks</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${streakFire} ${streak>0?streak+'d streak':''}</div>
+        </div>
+      </div>
+      <div style="height:6px;border-radius:99px;background:${T().dark?"#ffffff10":"#00000009"};overflow:hidden">
+        <div style="height:100%;width:${eff}%;background:${eff===100?"#10b981":A().g};border-radius:99px;transition:width 0.8s cubic-bezier(0.34,1.56,0.64,1)"></div>
+      </div>
+      ${eff===100?`<div style="margin-top:10px;font-size:12.5px;color:#10b981;font-weight:700">🎉 Perfect Day — all tasks done!</div>`:''}
+    </div>
+
+    <!-- TODAY CHIPS: Mood / Water / Sleep -->
+    <div class="reveal today-bar">
+      <div class="t-chip${todayMood?' active':''}" onclick="scrollToId('card-mood')"
+        style="${todayMood?`border-color:${moodColor(todayMood)}44;background:${moodColor(todayMood)}12;color:${moodColor(todayMood)}`:''}">
+        ${todayMood?moodEmoji(todayMood):'😶'}&nbsp;${todayMood?MOODS.find(m=>m.id===todayMood).label:'Mood'}
+      </div>
+      <div class="t-chip${todayWater>0?' active':''}" onclick="scrollToId('card-water')"
+        style="${waterGoalReached(todayWater)?'border-color:#0284c744;background:#0284c712;color:#0284c7':''}">
+        💧&nbsp;${waterLabel(todayWater)}
+      </div>
+      <div class="t-chip${todaySleep?' active':''}" onclick="scrollToId('card-sleep')"
+        style="${todaySleep?'border-color:#818cf844;background:#818cf812;color:#818cf8':''}">
+        😴&nbsp;${todaySleep?todaySleep.hours+'h sleep':'Sleep'}
+      </div>
+      <div class="t-chip" onclick="switchTab('analytics')">📊&nbsp;Analytics</div>
+    </div>
+
+    <!-- STATS GRID -->
+    <div class="reveal grid2" style="margin-bottom:12px">
+      <div class="stat-card" style="border-color:#e11d4820">
+        <div style="font-size:20px">🔥</div>
+        <div class="stat-val" style="color:#e11d48">${streak}d</div>
+        <div class="stat-lbl">Current Streak</div>
+      </div>
+      <div class="stat-card" style="border-color:#10b98120">
+        <div style="font-size:20px">✅</div>
+        <div class="stat-val" style="color:#10b981">${done}/${all.length}</div>
+        <div class="stat-lbl">Today's Tasks</div>
+      </div>
+      <div class="stat-card" style="border-color:${A().p}20">
+        <div style="font-size:20px">📈</div>
+        <div class="stat-val" style="color:${A().p}">${Math.round(last7().reduce((a,d)=>a+getEff(d),0)/7)}%</div>
+        <div class="stat-lbl">7-Day Average</div>
+      </div>
+      <div class="stat-card" style="border-color:#6c63ff20">
+        <div style="font-size:20px">📅</div>
+        <div class="stat-val" style="color:#6c63ff">${Object.keys(S.checks).length}</div>
+        <div class="stat-lbl">Days Tracked</div>
+      </div>
+    </div>
+
+    <!-- SECTION RINGS -->
+    <div class="reveal section-rings">
+      ${secs.map(sec=>{
+        const pct=sec.tot?Math.round(sec.done/sec.tot*100):0;
+        const r=26,circ=2*Math.PI*r,dash=pct/100*circ;
+        return `<div class="ring-card">
+          <svg width="64" height="64" viewBox="0 0 64 64" class="ring-svg">
+            <circle cx="32" cy="32" r="${r}" fill="none" stroke="${T().dark?"#ffffff0a":"#00000008"}" stroke-width="5"/>
+            <circle cx="32" cy="32" r="${r}" fill="none" stroke="${sec.color}" stroke-width="5"
+              stroke-dasharray="${dash} ${circ}" stroke-linecap="round" transform="rotate(-90 32 32)"
+              style="transition:stroke-dasharray 0.7s cubic-bezier(0.34,1.56,0.64,1)"/>
+            <text x="32" y="37" text-anchor="middle" fill="${sec.color}" font-size="13" font-weight="800">${pct}%</text>
+          </svg>
+          <div class="ring-label" style="color:${sec.color}">${sec.icon} ${sec.label}</div>
+          <div style="font-size:10px;color:var(--muted)">${sec.done}/${sec.tot}</div>
+        </div>`;
+      }).join("")}
+    </div>
+
+    <!-- WEEK CHART -->
+    <div class="reveal card">
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="card-title" style="margin-bottom:12px">This Week</div>
+        <canvas id="weekChart" height="120"></canvas>
+      </div>
+    </div>
+
+    <!-- MOOD CARD -->
+    <div class="reveal card" id="card-mood">
+      <div class="card-header" style="${todayMood?`background:${moodColor(todayMood)}14`:``}">
+        <div class="card-title">🎭 Today's Mood${todayMood?` · <span style="color:${moodColor(todayMood)}">${moodEmoji(todayMood)} ${MOODS.find(m=>m.id===todayMood).label}</span>`:''}</div>
+      </div>
+      <div class="card-body">
+        <div class="mood-strip">
+          ${MOODS.map(m=>`
+            <button class="mood-btn${todayMood===m.id?' sel':''}" onclick="setMood('${today}','${m.id}')"
+              style="${todayMood===m.id?`border-color:${m.color};background:${m.color}15`:''}">
+              <span class="mood-emoji">${m.emoji}</span>
+              <span class="mood-lbl" style="color:${todayMood===m.id?m.color:'var(--muted)'}">${m.label}</span>
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- WATER CARD -->
+    <div class="reveal card" id="card-water">
+      <div class="card-header" style="${waterGoalReached(todayWater)?'background:#0284c714':''}">
+        <div class="card-title">💧 Water · <span style="color:${waterGoalReached(todayWater)?'#0284c7':'var(--sub)'}">${waterLabel(todayWater)}</span></div>
+        ${waterGoalReached(todayWater)?`<span style="font-size:11px;color:#0284c7;font-weight:700">✓ Goal!</span>`:''}
+      </div>
+      <div class="card-body">
+        <div class="water-unit-toggle">
+          <button class="unit-btn${S.waterUnit==='cups'?' active':''}" onclick="setWaterUnit('cups')">Cups</button>
+          <button class="unit-btn${S.waterUnit==='litres'?' active':''}" onclick="setWaterUnit('litres')">Litres</button>
+        </div>
+        <div class="water-visual">
+          ${Array.from({length:8},(_,i)=>`
+            <div class="water-drop" onclick="setWater('${today}',${i<todayWater?i:i+1})">
+              <svg viewBox="0 0 30 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15 3 C15 3 4 16 4 23 C4 29.627 9.373 35 16 35 C22.627 35 28 29.627 28 23 C28 16 17 3 15 3Z"
+                  fill="${i<todayWater?'#0284c7':'var(--border)'}" 
+                  stroke="${i<todayWater?'#0369a1':'var(--border)'}" stroke-width="1"
+                  style="transition:fill 0.22s cubic-bezier(0.34,1.56,0.64,1)"/>
+                ${i<todayWater?`<path d="M11 24 C12 20 14 19 16 20" stroke="#7dd3fc" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>`:''}
+              </svg>
+            </div>`).join("")}
+        </div>
+        <div class="water-info">
+          <span style="font-size:11px;color:var(--muted)">Tap drops · Each = 250ml</span>
+          <div class="flex-row" style="gap:6px">
+            <button onclick="setWater('${today}',Math.max(0,${todayWater}-1))" class="btn btn-surface" style="padding:5px 11px;font-size:14px">−</button>
+            <button onclick="setWater('${today}',Math.min(8,${todayWater}+1))" class="btn btn-accent" style="padding:5px 11px;font-size:14px">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLEEP CARD -->
+    <div class="reveal card" id="card-sleep">
+      <div class="card-header" style="${todaySleep?'background:#818cf814':''}">
+        <div class="card-title">😴 Sleep${todaySleep?` · <span style="color:#818cf8">${todaySleep.hours}h${todaySleep.quality?' · '+todaySleep.quality:''}</span>`:''}</div>
+      </div>
+      <div class="card-body">
+        <div class="sleep-row">
+          <span style="font-size:13px;color:var(--sub)">Hours slept last night</span>
+          <span class="sleep-big" id="sleep-val-home">${todaySleep?todaySleep.hours:7}h</span>
+        </div>
+        <input type="range" class="sleep-slider" min="1" max="12" step="0.5"
+          value="${todaySleep?todaySleep.hours:7}"
+          oninput="onSleepInput(this,'sleep-val-home')"
+          onchange="setSleepHours('${today}',this.value)"
+          style="background:linear-gradient(to right,#818cf8 ${((todaySleep?todaySleep.hours:7)-1)/11*100}%,var(--border) ${((todaySleep?todaySleep.hours:7)-1)/11*100}%)"/>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-weight:600;margin-top:3px;margin-bottom:0">
+          <span>1h</span><span>6h</span><span>8h</span><span>12h</span>
+        </div>
+        <div class="sleep-q">
+          ${SLEEP_Q.map(q=>`<button class="sleep-q-btn${todaySleep&&todaySleep.quality===q?' on':''}" onclick="setSleepQuality('${today}','${q}')">${q}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION CHECKLISTS -->
+    ${secs.map((sec,si)=>{
+      const pct=sec.tot?Math.round(sec.done/sec.tot*100):0;
+      return `<div class="reveal card" style="transition-delay:${si*55}ms">
+        <div class="card-header" style="background:${sec.color}${T().dark?"18":"0e"}">
+          <div class="card-title" style="color:${sec.color}">${sec.icon} ${sec.label}</div>
+          <div class="flex-row" style="gap:8px">
+            <span style="font-size:11px;color:${sec.color};font-weight:700">${sec.done}/${sec.tot}</span>
+          </div>
+        </div>
+        <div style="padding:0 16px"><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${sec.color}"></div></div></div>
+        ${sec.tasks.slice(0,5).map(t=>`
+          <div class="check-row" onclick="toggleCheck('${today}','${t.id}')">
+            <div class="check-box${checks[t.id]?' ':''}${checks[t.id]?'checked':''}" style="border-color:${checks[t.id]?sec.color:'var(--border)'};background:${checks[t.id]?sec.color:'transparent'}">${checks[t.id]?'✓':''}</div>
+            <span style="font-size:15px">${t.icon}</span>
+            <span class="check-label${checks[t.id]?' done':''}">${t.label}</span>
+          </div>`).join("")}
+        ${sec.tasks.length>5?`<div class="empty-state" style="padding:9px 0;font-size:11px">+${sec.tasks.length-5} more — see Calendar</div>`:''}
+      </div>`;
+    }).join("")}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════
+function buildCalendar(){
+  const today=todayStr();
+  const firstDay=new Date(S.calYear,S.calMonth,1).getDay();
+  const dim=new Date(S.calYear,S.calMonth+1,0).getDate();
+  const cells=[...Array(firstDay).fill(null),...Array.from({length:dim},(_,i)=>i+1)];
+  // mood strip for visible days
+  const visibleDates=Array.from({length:dim},(_,i)=>dkey(S.calYear,S.calMonth,i+1));
+
+  return `
+    <div class="reveal">
+      <div class="flex-between" style="margin-bottom:18px">
+        <button class="btn btn-surface" onclick="prevMonth()" style="font-size:16px;padding:8px 14px">‹</button>
+        <div style="font-family:'Instrument Serif',serif;font-size:22px;font-style:italic;color:var(--text)">${MONTHS[S.calMonth]} ${S.calYear}</div>
+        <button class="btn btn-surface" onclick="nextMonth()" style="font-size:16px;padding:8px 14px">›</button>
+      </div>
+
+      <div class="cal-grid" style="gap:3px;margin-bottom:4px">
+        ${DAYS.map(d=>`<div style="text-align:center;font-size:9.5px;font-weight:700;color:var(--muted);padding:3px 0;letter-spacing:1.2px">${d}</div>`).join("")}
+      </div>
+      <div class="cal-grid" style="margin-bottom:8px">
+        ${cells.map(day=>{
+          if(!day)return`<div></div>`;
+          const date=dkey(S.calYear,S.calMonth,day);
+          const eff=getEff(date);
+          const isTod=date===today,isSel=date===S.selDate;
+          const isRew=S.rewards[date],isExc=S.exceptions[date];
+          const hasPhoto=(S.photos[date]||[]).length>0,hasNote=!!S.notes[date];
+          const mood=S.mood[date];
+          return `<div class="cal-day${isTod?' today':''}${isSel?' selected':''}" onclick="selectDate('${date}')">
+            <div style="font-size:12px;font-weight:700;color:${isSel?'#fff':isTod?'var(--accent)':'var(--text)'}">${day}</div>
+            ${eff>0?`<div style="margin:2px 3px;height:3px;border-radius:99px;background:${A().p}20;overflow:hidden"><div style="height:100%;width:${eff}%;background:${eff===100?'#10b981':'var(--accent)'}"></div></div>`:''}
+            <div style="font-size:8px;margin-top:1px;color:${isSel?'#ffffffaa':'var(--muted)'}">${eff>0?eff+'%':''}</div>
+            ${(isRew||isExc||hasPhoto||hasNote||mood)?`<div style="display:flex;justify-content:center;gap:1px;margin-top:1px;font-size:7px">${isRew?'🌟':''}${isExc?'⚡':''}${hasPhoto?'📷':''}${mood?moodEmoji(mood):''}${hasNote?'📝':''}</div>`:''}
+          </div>`;
+        }).join("")}
+      </div>
+
+      <!-- MOOD STRIP under calendar -->
+      <div style="margin-bottom:16px">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:1.5px;margin-bottom:6px">MOOD THIS MONTH</div>
+        <div class="cal-mood-strip">
+          ${cells.map(day=>{
+            if(!day)return`<div></div>`;
+            const date=dkey(S.calYear,S.calMonth,day);
+            const mood=S.mood[date];
+            return `<div class="cal-mood-cell" style="background:${mood?moodColor(mood):T().dark?'#1a1a1a':'#f0f0f0'}" title="${mood||'no mood'}"></div>`;
+          }).join("")}
+        </div>
+      </div>
+
+      <!-- MONTH HEATMAP -->
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-header">
+          <div class="card-title">🗓️ Month Activity</div>
+          <span style="font-size:11px;color:var(--muted)">${dim} days</span>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px">
+            ${DAYS.map(d=>`<div style="text-align:center;font-size:9px;color:var(--muted);font-weight:700">${d[0]}</div>`).join("")}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">
+            ${cells.map(day=>{
+              if(!day)return`<div style="aspect-ratio:1;border-radius:5px;background:transparent"></div>`;
+              const date=dkey(S.calYear,S.calMonth,day);
+              const eff=getEff(date);
+              return `<div style="aspect-ratio:1;border-radius:5px;background:${hmColor(eff)};cursor:pointer;transition:transform 0.15s" onclick="selectDate('${date}')" title="${date}: ${eff}%"></div>`;
+            }).join("")}
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:10px;justify-content:flex-end">
+            <span style="font-size:9.5px;color:var(--muted)">Less</span>
+            ${[0,25,50,75,100].map(p=>`<div style="width:11px;height:11px;border-radius:3px;background:${hmColor(p)}"></div>`).join("")}
+            <span style="font-size:9.5px;color:var(--muted)">More</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MONTH STATS -->
+      <div class="card">
+        <div class="card-body">
+          <div class="section-label">This Month</div>
+          <div class="grid3">
+            ${(()=>{
+              const days=Array.from({length:dim},(_,i)=>dkey(S.calYear,S.calMonth,i+1));
+              const avg=Math.round(days.reduce((a,d)=>a+getEff(d),0)/dim);
+              const perfect=days.filter(d=>getEff(d)===100).length;
+              const moodDays=days.filter(d=>S.mood[d]).length;
+              return [
+                ['📈','Avg Efficiency',avg+'%','#6c63ff'],
+                ['💎','Perfect Days',perfect,'#10b981'],
+                ['🎭','Mood Logged',moodDays,'#e11d48'],
+              ].map(([ic,lb,vl,cl])=>`
+                <div class="stat-card" style="border-color:${cl}18;padding:11px 8px;text-align:center">
+                  <div style="font-size:17px">${ic}</div>
+                  <div style="font-weight:800;font-size:16px;color:${cl};margin-top:3px">${vl}</div>
+                  <div style="font-size:9px;color:var(--muted);margin-top:2px;font-weight:600">${lb}</div>
+                </div>`).join("");
+            })()}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// DAY VIEW
+// ═══════════════════════════════════════════════════════
+function buildDayView(){
+  const dk=S.selDate,checks=S.checks[dk]||{},extra=S.extra[dk]||[];
+  const note=S.notes[dk]||"",photos=S.photos[dk]||[];
+  const eff=getEff(dk),isRew=S.rewards[dk],isExc=S.exceptions[dk];
+  const dow=new Date(dk+"T00:00:00").getDay(),workout=S.workout[dow]||[];
+  const dateObj=new Date(dk+"T00:00:00");
+  const all=allTasks(),totalDone=all.filter(t=>checks[t.id]).length+extra.filter(t=>t.done).length;
+  const dash=(eff/100*163.4);
+  const dayMood=S.mood[dk],dayWater=S.water[dk]||0,daySleep=S.sleep[dk];
+  const secs=[
+    {label:"Physical",icon:"💪",color:"#e11d48",tasks:S.ptasks},
+    {label:"Mental",  icon:"🧠",color:"#6c63ff",tasks:S.mtasks},
+    {label:"Family",  icon:"❤️",color:"#059669",tasks:S.ftasks},
+  ];
+  return `
+    <div class="reveal flex-row" style="margin-bottom:18px">
+      <button class="btn btn-surface" onclick="backFromDay()">← Back</button>
+      <div>
+        <div style="font-family:'Instrument Serif',serif;font-size:19px;font-style:italic;color:var(--text)">${dateObj.toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"})}</div>
+        <div style="font-size:11px;color:var(--sub);margin-top:1px">${isRew?'🌟 Reward · ':''}${isExc?'⚡ Exception · ':''}${eff}% efficiency</div>
+      </div>
+    </div>
+
+    <div class="reveal" style="display:flex;gap:10px;margin-bottom:12px">
+      <div class="card" style="min-width:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;margin-bottom:0">
+        <svg width="70" height="70" viewBox="0 0 70 70" class="ring-svg">
+          <circle cx="35" cy="35" r="26" fill="none" stroke="var(--border)" stroke-width="5"/>
+          <circle cx="35" cy="35" r="26" fill="none" stroke="${eff===100?'#10b981':A().p}" stroke-width="5"
+            stroke-dasharray="${dash} 163.4" stroke-linecap="round" transform="rotate(-90 35 35)" style="transition:stroke-dasharray 0.8s cubic-bezier(0.34,1.56,0.64,1)"/>
+          <text x="35" y="40" text-anchor="middle" fill="var(--text)" font-size="14" font-weight="800">${eff}%</text>
+        </svg>
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;font-weight:700;letter-spacing:0.5px">EFFICIENCY</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+        <div class="card" style="padding:10px;flex:1;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+          <span style="font-size:11px;color:var(--sub)">Tasks</span>
+          <span style="font-weight:800;color:var(--accent);font-size:14px">${totalDone}/${all.length+extra.length}</span>
+        </div>
+        <div class="card" style="padding:10px;flex:1;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+          <span style="font-size:11px;color:var(--sub)">Mood</span>
+          <span style="font-size:16px">${dayMood?moodEmoji(dayMood):'—'}</span>
+        </div>
+        <div class="card" style="padding:10px;flex:1;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+          <span style="font-size:11px;color:var(--sub)">💧 Water</span>
+          <span style="font-weight:700;color:#0284c7;font-size:12px">${dayWater}/8</span>
+        </div>
+        <div class="card" style="padding:10px;flex:1;display:flex;justify-content:space-between;align-items:center;margin-bottom:0">
+          <span style="font-size:11px;color:var(--sub)">😴 Sleep</span>
+          <span style="font-weight:700;color:#818cf8;font-size:12px">${daySleep?daySleep.hours+'h':'—'}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MOOD -->
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">🎭 Mood</div></div>
+      <div class="card-body">
+        <div class="mood-strip">
+          ${MOODS.map(m=>`<button class="mood-btn${dayMood===m.id?' sel':''}" onclick="setMood('${dk}','${m.id}')"
+            style="${dayMood===m.id?`border-color:${m.color};background:${m.color}15`:''}">
+            <span class="mood-emoji">${m.emoji}</span>
+            <span class="mood-lbl" style="color:${dayMood===m.id?m.color:'var(--muted)'}">${m.label}</span>
+          </button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- WATER -->
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">💧 Water — ${dayWater}/8 cups</div></div>
+      <div class="card-body">
+        <div class="water-visual">
+          ${Array.from({length:8},(_,i)=>`
+            <div class="water-drop" onclick="setWater('${dk}',${i<dayWater?i:i+1})">
+              <svg viewBox="0 0 30 38" fill="none"><path d="M15 3 C15 3 4 16 4 23 C4 29.627 9.373 35 16 35 C22.627 35 28 29.627 28 23 C28 16 17 3 15 3Z"
+                fill="${i<dayWater?'#0284c7':'var(--border)'}" stroke="${i<dayWater?'#0369a1':'var(--border)'}" stroke-width="1"/>
+                ${i<dayWater?`<path d="M11 24 C12 20 14 19 16 20" stroke="#7dd3fc" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>`:''}</svg>
+            </div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- SLEEP -->
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">😴 Sleep — ${daySleep?daySleep.hours+'h · '+(daySleep.quality||''):'Not logged'}</div></div>
+      <div class="card-body">
+        <div class="sleep-row">
+          <span style="font-size:13px;color:var(--sub)">Hours slept</span>
+          <span class="sleep-big" id="sleep-val-day">${daySleep?daySleep.hours:7}h</span>
+        </div>
+        <input type="range" class="sleep-slider" min="1" max="12" step="0.5" value="${daySleep?daySleep.hours:7}"
+          oninput="onSleepInput(this,'sleep-val-day')" onchange="setSleepHours('${dk}',this.value)"
+          style="background:linear-gradient(to right,#818cf8 ${((daySleep?daySleep.hours:7)-1)/11*100}%,var(--border) ${((daySleep?daySleep.hours:7)-1)/11*100}%)"/>
+        <div class="sleep-q">
+          ${SLEEP_Q.map(q=>`<button class="sleep-q-btn${daySleep&&daySleep.quality===q?' on':''}" onclick="setSleepQuality('${dk}','${q}')">${q}</button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:7px;margin-bottom:12px">
+      <button onclick="toggleReward('${dk}')" class="btn" style="flex:1;font-size:11px;background:${isRew?A().p+'1e':'var(--surface)'};color:${isRew?A().p:'var(--sub)'};border:1px solid ${isRew?A().p+'44':'var(--border)'}">🌟 ${isRew?'Rewarded':'Reward'}</button>
+      <button onclick="toggleException('${dk}')" class="btn" style="flex:1;font-size:11px;background:${isExc?'#f59e0b1e':'var(--surface)'};color:${isExc?'#d97706':'var(--sub)'};border:1px solid ${isExc?'#d97706':'var(--border)'}">⚡ ${isExc?'Exception':'Mark Exception'}</button>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-header">
+        <div class="card-title">📷 Photos</div>
+        <label class="btn btn-accent" style="cursor:pointer;font-size:11px">+ Add<input type="file" accept="image/*" multiple style="display:none" onchange="addPhotos(event,'${dk}')"/></label>
+      </div>
+      <div class="card-body">
+        ${photos.length===0?`<div class="empty-state">No photos yet</div>`:`<div class="photo-grid">${photos.map((src,i)=>`<div class="photo-thumb"><img src="${src}"/><button class="photo-del" onclick="deletePhoto('${dk}',${i})">×</button></div>`).join("")}</div>`}
+      </div>
+    </div>
+
+    ${workout.length>0?`<div class="reveal card">
+      <div class="card-header" style="background:#e11d4814"><div class="card-title" style="color:#e11d48">💪 Workout</div></div>
+      ${workout.map((ex,i)=>`<div class="check-row" onclick="toggleWorkout('${dk}',${i})">
+        <div class="check-box${checks['wx_'+i]?' checked':''}" style="border-color:${checks['wx_'+i]?'#e11d48':'var(--border)'};background:${checks['wx_'+i]?'#e11d48':'transparent'}">${checks['wx_'+i]?'✓':''}</div>
+        <span class="check-label${checks['wx_'+i]?' done':''}">${ex}</span>
+      </div>`).join("")}
+    </div>`:''}
+
+    ${secs.map((sec,si)=>{
+      const sdone=sec.tasks.filter(t=>checks[t.id]).length;
+      const pct=sec.tasks.length?Math.round(sdone/sec.tasks.length*100):0;
+      return `<div class="reveal card" style="transition-delay:${si*45}ms">
+        <div class="card-header" style="background:${sec.color}${T().dark?'18':'0e'}">
+          <div class="card-title" style="color:${sec.color}">${sec.icon} ${sec.label}</div>
+          <span style="font-size:11px;color:${sec.color};font-weight:700">${sdone}/${sec.tasks.length}</span>
+        </div>
+        <div style="padding:0 16px"><div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${sec.color}"></div></div></div>
+        ${sec.tasks.map(t=>`<div class="check-row" onclick="toggleCheck('${dk}','${t.id}')">
+          <div class="check-box${checks[t.id]?' checked':''}" style="border-color:${checks[t.id]?sec.color:'var(--border)'};background:${checks[t.id]?sec.color:'transparent'}">${checks[t.id]?'✓':''}</div>
+          <span style="font-size:14px">${t.icon}</span>
+          <span class="check-label${checks[t.id]?' done':''}">${t.label}</span>
+        </div>`).join("")}
+      </div>`;
+    }).join("")}
+
+    <div class="reveal card">
+      <div class="card-header">
+        <div class="card-title">⚡ Extra Tasks</div>
+        <button class="btn btn-accent" style="font-size:11px" onclick="addExtra('${dk}')">+ Add</button>
+      </div>
+      <div class="card-body">
+        ${extra.length===0?`<div class="empty-state">No extra tasks</div>`:extra.map((t,i)=>`
+          <div class="flex-row" style="padding:9px 0;border-bottom:1px solid var(--border)">
+            <div onclick="toggleExtra('${dk}',${i})" class="check-box${t.done?' checked':''}" style="border-color:${t.done?'var(--accent)':'var(--border)'};background:${t.done?'var(--accent)':'transparent'};cursor:pointer">${t.done?'✓':''}</div>
+            <span style="flex:1;font-size:13px;color:${t.done?'var(--muted)':'var(--text)'};text-decoration:${t.done?'line-through':'none'}">${t.label}</span>
+            <button onclick="deleteExtra('${dk}',${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px">×</button>
+          </div>`).join("")}
+      </div>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">📵 Doom Scroll</div></div>
+      <div class="card-body">
+        <div class="flex-between" style="margin-bottom:4px">
+          <span style="font-size:13px;color:var(--sub)">Time spent today</span>
+          <span style="font-family:'Instrument Serif',serif;font-size:28px;font-style:italic;color:${(S.doom[dk]||0)>60?'#e11d48':(S.doom[dk]||0)>30?'#d97706':'var(--accent)'}" id="doom-val-day">${S.doom[dk]||0} min</span>
+        </div>
+        <input type="range" class="doom-slider" min="0" max="240" step="5"
+          value="${S.doom[dk]||0}"
+          oninput="onDoomInput(this,'${dk}','doom-val-day')"
+          onchange="setDoom('${dk}',this.value)"
+          style="${doomSliderStyle(S.doom[dk]||0)}"/>
+        <div class="doom-labels"><span>0</span><span>1h</span><span>2h</span><span>4h</span></div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:6px;text-align:center">🎯 Goal: under 30 min / day</div>
+      </div>
+    </div>
+
+    <div class="reveal card" style="margin-bottom:0">
+      <div class="card-header"><div class="card-title">📝 Notes</div></div>
+      <div class="card-body">
+        <textarea rows="3" placeholder="Add notes for this day..." oninput="saveNote('${dk}',this.value)">${note}</textarea>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════════════════════
+function buildAnalytics(){
+  const streak=getStreak();
+  const l30=last30(),avgEff=Math.round(l30.reduce((a,d)=>a+getEff(d),0)/30);
+  const perfect=l30.filter(d=>getEff(d)===100).length;
+  const bestDay=l30.reduce((a,d)=>getEff(d)>getEff(a)?d:a,l30[0]);
+  const moodCounts={};l30.forEach(d=>{if(S.mood[d])moodCounts[S.mood[d]]=(moodCounts[S.mood[d]]||0)+1;});
+  const topMood=Object.entries(moodCounts).sort((a,b)=>b[1]-a[1])[0];
+  const wDays=l30.filter(d=>S.water[d]>0);
+  const wAvg=wDays.length?Math.round(wDays.reduce((a,d)=>a+(S.water[d]||0),0)/wDays.length*10)/10:0;
+  const sDays=l30.filter(d=>S.sleep[d]&&S.sleep[d].hours);
+  const sAvg=sDays.length?Math.round(sDays.reduce((a,d)=>a+(S.sleep[d].hours),0)/sDays.length*10)/10:0;
+  const unlocked=getUnlocked();
+  const hmDays=lastN(91);
+
+  return `
+    <h1 class="page-title reveal">Analytics</h1>
+
+    <div class="reveal grid2" style="margin-bottom:12px">
+      ${[['📈','30d Avg',avgEff+'%','#6c63ff'],['🌟','Perfect',perfect+'d','#10b981'],['🔥','Streak',streak+'d','#e11d48'],['🏆','Best',bestDay.slice(5),'#d97706']].map(([ic,lb,vl,cl])=>`
+        <div class="stat-card" style="border-color:${cl}20">
+          <div style="font-size:21px">${ic}</div>
+          <div class="stat-val" style="color:${cl}">${vl}</div>
+          <div class="stat-lbl">${lb}</div>
+        </div>`).join("")}
+    </div>
+
+    <div class="reveal" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">
+      ${topMood?`<div class="mini-chip">${moodEmoji(topMood[0])} ${topMood[1]}d ${topMood[0]}</div>`:''}
+      ${wAvg>0?`<div class="mini-chip">💧 ${wAvg} cups/day</div>`:''}
+      ${sAvg>0?`<div class="mini-chip">😴 ${sAvg}h sleep/day</div>`:''}
+    </div>
+
+    <div class="reveal card">
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="card-title" style="margin-bottom:12px">30-Day Efficiency</div>
+        <canvas id="trendChart" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="card-title" style="margin-bottom:12px">🎭 Mood — Last 14 Days</div>
+        <canvas id="moodChart" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="card-title" style="margin-bottom:12px">💧😴 Water & Sleep — Last 14 Days</div>
+        <canvas id="healthChart" height="130"></canvas>
+      </div>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-body" style="padding-bottom:10px">
+        <div class="card-title" style="margin-bottom:12px">Wellness Balance Today</div>
+        <canvas id="radarChart" height="190"></canvas>
+      </div>
+    </div>
+
+    <!-- HEATMAP 13 weeks -->
+    <div class="reveal card">
+      <div class="card-header">
+        <div class="card-title">🗓️ Activity — Last 13 Weeks</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;gap:3px;margin-bottom:5px">
+          ${DAYS.map(d=>`<div style="flex:1;text-align:center;font-size:8px;font-weight:700;color:var(--muted)">${d[0]}</div>`).join("")}
+        </div>
+        <div class="hm-grid">
+          ${Array.from({length:new Date(hmDays[0]).getDay()},()=>`<div class="hm-cell" style="background:transparent"></div>`).join("")}
+          ${hmDays.map(d=>{const e=getEff(d);return `<div class="hm-cell" title="${d}: ${e}%" style="background:${hmColor(e)}"></div>`;}).join("")}
+        </div>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:9px;justify-content:flex-end">
+          <span style="font-size:9px;color:var(--muted)">Less</span>
+          ${[0,25,50,75,100].map(p=>`<div style="width:11px;height:11px;border-radius:3px;background:${hmColor(p)}"></div>`).join("")}
+          <span style="font-size:9px;color:var(--muted)">More</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACHIEVEMENTS -->
+    <div class="reveal card">
+      <div class="card-header">
+        <div class="card-title">🏅 Achievements</div>
+        <span style="font-size:11px;color:var(--accent);font-weight:700">${unlocked.length}/${ACHIEVEMENTS.length}</span>
+      </div>
+      <div class="card-body">
+        <div class="badge-grid">
+          ${ACHIEVEMENTS.map(a=>{
+            const on=unlocked.find(u=>u.id===a.id);
+            return `<div class="badge-item${on?' unlocked':''}" title="${a.label}">
+              <span class="badge-icon">${a.icon}</span>
+              <span class="badge-lbl">${a.label}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">📵 Doom Scroll — Last 7 Days</div></div>
+      <div class="card-body">
+        ${last7().map(d=>{const m=S.doom[d]||0;return `
+          <div class="flex-row" style="margin-bottom:9px">
+            <div style="width:52px;font-size:10.5px;color:var(--muted);font-weight:600">${d.slice(5)}</div>
+            <div style="flex:1;height:7px;border-radius:99px;background:${T().dark?'#ffffff10':'#00000009'};overflow:hidden">
+              <div style="height:100%;width:${Math.min(m/120*100,100)}%;background:${m>60?'#e11d48':m>30?'#d97706':A().p};border-radius:99px;transition:width 0.5s ease"></div>
+            </div>
+            <div style="width:40px;font-size:11px;color:var(--sub);text-align:right;font-weight:700">${m}m</div>
+          </div>`;}).join("")}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════
+function buildSettings(){
+  const secs=[
+    {label:"Physical",tasks:S.ptasks,key:"ptasks",color:"#e11d48",icon:"💪",sec:"physical"},
+    {label:"Mental",  tasks:S.mtasks,key:"mtasks",color:"#6c63ff",icon:"🧠",sec:"mental"},
+    {label:"Family",  tasks:S.ftasks,key:"ftasks",color:"#059669",icon:"❤️",sec:"family"},
+  ];
+  return `
+    <h1 class="page-title reveal">Settings</h1>
+
+    <!-- PIN LOCK -->
+    <div class="reveal card" style="border-color:${S.pinEnabled?A().p+'35':'var(--border)'}">
+      <div class="card-header" style="${S.pinEnabled?`background:${A().p}10`:''}">
+        <div>
+          <div class="card-title">🔐 PIN Lock <span style="font-size:10px;margin-left:6px;font-weight:600;color:${S.pinEnabled?A().p:'var(--muted)'}">${S.pinEnabled?'● ON':'○ OFF'}</span></div>
+        </div>
+        <button class="btn ${S.pinEnabled?'btn-danger':'btn-solid'}" style="font-size:11.5px" onclick="${S.pinEnabled?'disablePin()':'showSetPin()'}">${S.pinEnabled?'Disable':'Set PIN'}</button>
+      </div>
+      <div class="card-body" style="padding-top:11px">
+        <div style="font-size:12.5px;color:var(--sub);line-height:1.5">Protect your data with a 4-digit PIN. Required on every app open.</div>
+        ${S.pinEnabled?`<div style="font-size:11.5px;color:${A().p};margin-top:8px;font-weight:600">✓ App locked. PIN required on next launch.</div>`:''}
+      </div>
+    </div>
+
+    <!-- THEMES -->
+    <div class="reveal card">
+      <div class="card-body">
+        <div class="section-label">Dark Themes</div>
+        <div class="grid2" style="gap:8px">
+          ${Object.entries(THEMES).filter(([,t])=>t.dark).map(([k,t])=>`
+            <button class="theme-btn" onclick="setTheme('${k}')" style="background:${t.bg};border-color:${S.themeKey===k?A().p:t.border}">
+              <span style="font-size:16px">${t.icon}</span>
+              <span style="font-size:12px;font-weight:700;color:${t.text}">${t.name}</span>
+              ${S.themeKey===k?`<span style="margin-left:auto;color:${A().p};font-size:14px">✓</span>`:''}
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+    <div class="reveal card">
+      <div class="card-body">
+        <div class="section-label">Light Themes</div>
+        <div class="grid2" style="gap:8px">
+          ${Object.entries(THEMES).filter(([,t])=>!t.dark).map(([k,t])=>`
+            <button class="theme-btn" onclick="setTheme('${k}')" style="background:${t.bg};border-color:${S.themeKey===k?A().p:t.border}">
+              <span style="font-size:16px">${t.icon}</span>
+              <span style="font-size:12px;font-weight:700;color:${t.text}">${t.name}</span>
+              ${S.themeKey===k?`<span style="margin-left:auto;color:${A().p};font-size:14px">✓</span>`:''}
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- ACCENTS -->
+    <div class="reveal card">
+      <div class="card-body">
+        <div class="section-label">Accent Color</div>
+        <div style="display:flex;flex-wrap:wrap;gap:7px">
+          ${Object.entries(ACCENTS).map(([k,a])=>`
+            <button class="accent-pill" onclick="setAccent('${k}')" style="background:${a.p}16;color:${a.p};border-color:${S.accentKey===k?a.p:'transparent'}">
+              ${S.accentKey===k?'● ':''} ${a.name}
+            </button>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKOUT -->
+    <div class="reveal card">
+      <div class="card-header">
+        <div class="card-title">💪 Workout Plan</div>
+        <button class="btn btn-accent" style="font-size:11.5px" onclick="toggleWoEditor()">${S.showWoEd?'Done':'Edit'}</button>
+      </div>
+      <div class="card-body">
+        ${S.showWoEd?DAYS.map((day,i)=>`
+          <div style="margin-bottom:14px">
+            <div class="section-label" style="color:var(--accent)">${day}</div>
+            ${(S.workout[i]||[]).map((ex,j)=>`
+              <div class="flex-row" style="margin-bottom:5px">
+                <span style="flex:1;font-size:12.5px;background:var(--surface);padding:8px 12px;border-radius:9px;border:1px solid var(--border);color:var(--text)">${ex}</span>
+                <button onclick="removeExercise(${i},${j})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:17px">×</button>
+              </div>`).join("")}
+            <button class="btn btn-surface" style="width:100%;font-size:11.5px;margin-top:3px" onclick="addExercise(${i})">+ Add</button>
+          </div>`).join("")
+        :`<div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${DAYS.map((d,i)=>`<div style="font-size:10.5px;padding:4px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--border);color:var(--sub);font-weight:600">${d}: ${(S.workout[i]||[]).length||'Rest'}</div>`).join("")}
+        </div>`}
+      </div>
+    </div>
+
+    ${secs.map((sec,si)=>`
+    <div class="reveal card" style="transition-delay:${si*35}ms">
+      <div class="card-header">
+        <div class="card-title" style="color:${sec.color}">${sec.icon} ${sec.label}</div>
+        <div class="flex-row" style="gap:5px">
+          <button class="btn" style="font-size:10.5px;background:${sec.color}14;color:${sec.color};border:1px solid ${sec.color}28" onclick="toggleEditSec('${sec.sec}')">${S.editSec===sec.sec?'Done':'Edit'}</button>
+          <button class="btn btn-accent" style="font-size:10.5px" onclick="addTask('${sec.sec}')">+ Add</button>
+        </div>
+      </div>
+      <div class="card-body">
+        ${sec.tasks.map(t=>`<div class="flex-row" style="padding:9px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:14px">${t.icon}</span>
+          <span style="flex:1;font-size:12.5px;color:var(--text);font-weight:500">${t.label}</span>
+          ${S.editSec===sec.sec?`<button onclick="deleteTask('${sec.key}','${t.id}')" style="background:none;border:none;color:#e11d48;cursor:pointer;font-size:17px">×</button>`:''}
+        </div>`).join("")}
+      </div>
+    </div>`).join("")}
+
+    <!-- DATA -->
+    <div class="reveal card">
+      <div class="card-header"><div class="card-title">📤 Data & Backup</div></div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:9px">
+        <button class="btn btn-accent btn-full" onclick="exportData()">⬇️ Export Backup (JSON)</button>
+        <label class="btn btn-surface btn-full" style="cursor:pointer">⬆️ Import Backup (JSON)<input type="file" accept=".json" style="display:none" onchange="importData(event)"/></label>
+        <button class="btn btn-full" style="background:${A().p}12;color:${A().p};border:1px solid ${A().p}28" onclick="showReport()">🤖 Generate Claude Report</button>
+      </div>
+    </div>
+
+    <div class="reveal card" style="border-color:#e11d4820;margin-bottom:0">
+      <div class="card-body">
+        <div style="font-size:11.5px;font-weight:700;color:#e11d48;margin-bottom:10px;letter-spacing:0.3px">⚠️ DANGER ZONE</div>
+        <button class="btn btn-danger btn-full" onclick="resetToday()">🗑️ Reset Today's Data</button>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════════════════════
+function initCharts(){
+  const t=T(),a=A();
+  if(S.tab==="home"){
+    const el=document.getElementById("weekChart");if(!el)return;
+    const w7=last7().map(d=>({day:d.slice(5),pct:getEff(d),isToday:d===todayStr()}));
+    chartInst.week=new Chart(el,{type:"bar",
+      data:{labels:w7.map(d=>d.day),datasets:[{data:w7.map(d=>d.pct),backgroundColor:w7.map(d=>d.isToday?a.p:d.pct===100?"#10b981":a.p+"44"),borderRadius:8,borderSkipped:false}]},
+      options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:t.card,titleColor:t.text,bodyColor:t.sub,borderColor:t.border,borderWidth:1,padding:10,callbacks:{label:c=>`${c.raw}% efficiency`}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{color:t.muted,font:{size:10.5}}},y:{grid:{color:t.border+"55"},border:{display:false},ticks:{color:t.muted,font:{size:10},callback:v=>`${v}%`},max:100,min:0}}}
+    });
+  }
+  if(S.tab==="analytics"){
+    const l30=last30(),l14=lastN(14);
+    const tEl=document.getElementById("trendChart");
+    if(tEl){
+      chartInst.trend=new Chart(tEl,{type:"line",
+        data:{labels:l30.map(d=>d.slice(8)),datasets:[{data:l30.map(d=>getEff(d)),borderColor:a.p,backgroundColor:a.p+"16",fill:true,tension:0.45,pointRadius:0,pointHoverRadius:5,borderWidth:2.5}]},
+        options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:t.card,titleColor:t.text,bodyColor:t.sub,borderColor:t.border,borderWidth:1,padding:10,callbacks:{label:c=>`${c.raw}%`}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{color:t.muted,font:{size:9.5},maxTicksLimit:8}},y:{grid:{color:t.border+"44"},border:{display:false},ticks:{color:t.muted,font:{size:9.5},callback:v=>`${v}%`},max:100,min:0}}}
+      });
+    }
+    const mEl=document.getElementById("moodChart");
+    if(mEl){
+      const mScores={awful:1,bad:2,meh:3,good:4,great:5};
+      chartInst.mood=new Chart(mEl,{type:"bar",
+        data:{labels:l14.map(d=>d.slice(8)),datasets:[{data:l14.map(d=>S.mood[d]?mScores[S.mood[d]]:null),backgroundColor:l14.map(d=>S.mood[d]?moodColor(S.mood[d])+'cc':a.p+"33"),borderRadius:6,borderSkipped:false}]},
+        options:{responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:t.card,titleColor:t.text,bodyColor:t.sub,borderColor:t.border,borderWidth:1,padding:10,callbacks:{label:c=>{const n=Object.keys(mScores).find(k=>mScores[k]===c.raw);return n||'';}}}},scales:{x:{grid:{display:false},border:{display:false},ticks:{color:t.muted,font:{size:9.5}}},y:{grid:{display:false},border:{display:false},min:0,max:5,ticks:{color:t.muted,font:{size:9.5},callback:v=>({1:'😩',3:'😐',5:'😄'}[v]||'')}}}}
+      });
+    }
+    const hEl=document.getElementById("healthChart");
+    if(hEl){
+      chartInst.health=new Chart(hEl,{type:"bar",
+        data:{labels:l14.map(d=>d.slice(8)),datasets:[
+          {label:"Water (cups)",data:l14.map(d=>S.water[d]||0),backgroundColor:"#0284c744",borderColor:"#0284c7",borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+          {label:"Sleep (hrs)",data:l14.map(d=>S.sleep[d]?S.sleep[d].hours:null),type:"line",backgroundColor:"transparent",borderColor:"#818cf8",borderWidth:2.5,tension:0.4,pointRadius:3,pointBackgroundColor:"#818cf8",yAxisID:'y2'},
+        ]},
+        options:{responsive:true,plugins:{legend:{display:true,labels:{color:t.sub,font:{size:10.5},usePointStyle:true,padding:12}},tooltip:{backgroundColor:t.card,titleColor:t.text,bodyColor:t.sub,borderColor:t.border,borderWidth:1,padding:10}},scales:{x:{grid:{display:false},border:{display:false},ticks:{color:t.muted,font:{size:9.5}}},y:{grid:{color:t.border+"44"},border:{display:false},ticks:{color:"#0284c7",font:{size:9.5}},max:8,min:0},y2:{position:"right",grid:{display:false},border:{display:false},ticks:{color:"#818cf8",font:{size:9.5}},max:12,min:0}}}
+      });
+    }
+    const rEl=document.getElementById("radarChart");
+    if(rEl){
+      const today=todayStr(),ch=S.checks[today]||{};
+      const rd=[
+        S.ptasks.length?Math.round(S.ptasks.filter(t=>ch[t.id]).length/S.ptasks.length*100):0,
+        S.mtasks.length?Math.round(S.mtasks.filter(t=>ch[t.id]).length/S.mtasks.length*100):0,
+        S.ftasks.length?Math.round(S.ftasks.filter(t=>ch[t.id]).length/S.ftasks.length*100):0,
+      ];
+      chartInst.radar=new Chart(rEl,{type:"radar",
+        data:{labels:["Physical","Mental","Family"],datasets:[{data:rd,borderColor:a.p,backgroundColor:a.p+"22",pointBackgroundColor:a.p,pointRadius:5,borderWidth:2.5}]},
+        options:{responsive:true,plugins:{legend:{display:false}},scales:{r:{grid:{color:t.border},angleLines:{color:t.border},pointLabels:{color:t.sub,font:{size:12,weight:"700"}},ticks:{display:false},min:0,max:100}}}
+      });
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// EVENT HANDLERS
+// ═══════════════════════════════════════════════════════
+function switchTab(tab){if(tab===S.tab&&!S.dayView)return;S.tab=tab;S.dayView=false;render();document.getElementById("scroll-area").scrollTop=0;}
+function prevMonth(){if(S.calMonth===0){S.calMonth=11;S.calYear--;}else S.calMonth--;render();}
+function nextMonth(){if(S.calMonth===11){S.calMonth=0;S.calYear++;}else S.calMonth++;render();}
+function selectDate(date){S.selDate=date;S.dayView=true;render();document.getElementById("scroll-area").scrollTop=0;}
+function backFromDay(){S.dayView=false;render();}
+function toggleCheck(date,id){S.checks[date]=S.checks[date]||{};S.checks[date][id]=!S.checks[date][id];persist();render();}
+function toggleWorkout(date,i){S.checks[date]=S.checks[date]||{};S.checks[date]['wx_'+i]=!S.checks[date]['wx_'+i];persist();render();}
+function toggleReward(date){S.rewards[date]=!S.rewards[date];persist();render();}
+function toggleException(date){S.exceptions[date]=!S.exceptions[date];persist();render();}
+function addExtra(date){const lb=prompt("Task for this day:");if(lb?.trim()){S.extra[date]=S.extra[date]||[];S.extra[date].push({id:Date.now(),label:lb.trim(),done:false});persist();render();}}
+function toggleExtra(date,i){S.extra[date][i].done=!S.extra[date][i].done;persist();render();}
+function deleteExtra(date,i){S.extra[date].splice(i,1);persist();render();}
+function saveNote(date,val){S.notes[date]=val;persist();}
+function addPhotos(event,date){const files=Array.from(event.target.files);let c=files.length;if(!c)return;files.forEach(f=>{const r=new FileReader();r.onload=e=>{S.photos[date]=S.photos[date]||[];S.photos[date].push(e.target.result);c--;persist();if(!c)render();};r.readAsDataURL(f);});}
+function deletePhoto(date,i){S.photos[date].splice(i,1);persist();render();}
+function setTheme(k){S.themeKey=k;persist();render();}
+function setAccent(k){S.accentKey=k;persist();render();}
+function toggleWoEditor(){S.showWoEd=!S.showWoEd;render();}
+function addExercise(day){const ex=prompt(`Exercise for ${DAYS[day]}:`);if(ex?.trim()){S.workout[day]=S.workout[day]||[];S.workout[day].push(ex.trim());persist();render();}}
+function removeExercise(day,i){S.workout[day].splice(i,1);persist();render();}
+function toggleEditSec(sec){S.editSec=S.editSec===sec?null:sec;render();}
+function addTask(sec){const lb=prompt("Task label:");if(!lb?.trim())return;const ic=prompt("Icon (emoji):")||"⚡";const task={id:"c"+Date.now(),label:lb.trim(),icon:ic};if(sec==="physical")S.ptasks.push(task);else if(sec==="mental")S.mtasks.push(task);else S.ftasks.push(task);persist();render();}
+function deleteTask(key,id){S[key]=S[key].filter(t=>t.id!==id);persist();render();}
+function resetToday(){if(confirm("Reset today's data?")){const td=todayStr();delete S.checks[td];delete S.mood[td];delete S.water[td];delete S.sleep[td];persist();render();}}
+function scrollToId(id){const el=document.getElementById(id);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
+
+// MOOD/WATER/SLEEP
+function setMood(date,id){S.mood[date]=S.mood[date]===id?null:id;persist();render();}
+function setWater(date,cups){
+  const v=Math.max(0,Math.min(8,cups));
+  S.water[date]=v===S.water[date]?v-1:v;
+  if(S.water[date]<0)S.water[date]=0;
+  persist();render();
+}
+function setWaterUnit(unit){S.waterUnit=unit;persist();render();}
+function onSleepInput(el,valId){
+  const v=parseFloat(el.value);
+  const disp=document.getElementById(valId);
+  if(disp)disp.textContent=v+'h';
+  const pct=(v-1)/11*100;
+  el.style.background=`linear-gradient(to right,#818cf8 ${pct}%,var(--border) ${pct}%)`;
+}
+function setSleepHours(date,hours){
+  S.sleep[date]=S.sleep[date]||{};
+  S.sleep[date].hours=parseFloat(hours);
+  persist();
+}
+function setSleepQuality(date,q){
+  S.sleep[date]=S.sleep[date]||{hours:7};
+  S.sleep[date].quality=S.sleep[date].quality===q?null:q;
+  persist();render();
+}
+function doomSliderStyle(val){
+  const pct=val/240*100;
+  const col=val>60?"#e11d48":val>30?"#d97706":A().p;
+  return `background:linear-gradient(to right,${col} ${pct}%,var(--border) ${pct}%)`;
+}
+function onDoomInput(el,date,valId){
+  const v=parseInt(el.value);
+  const col=v>60?"#e11d48":v>30?"#d97706":A().p;
+  el.style.background=`linear-gradient(to right,${col} ${v/240*100}%,var(--border) ${v/240*100}%)`;
+  const disp=document.getElementById(valId);
+  if(disp){disp.textContent=v+' min';disp.style.color=col;}
+  // thumb color
+  el.style.setProperty('--tc',col);
+}
+function setDoom(date,val){S.doom[date]=parseInt(val);persist();}
+
+// PIN
+let pinBuffer='',pinMode='unlock',pinTmp='';
+function showPinLock(){
+  pinBuffer='';pinMode='unlock';
+  applyTheme();
+  document.body.style.background=T().bg;
+  document.getElementById("content").innerHTML='';
+  const ex=document.getElementById("pin-overlay");if(ex)ex.remove();
+  const ov=document.createElement("div");
+  ov.id="pin-overlay";ov.className="pin-overlay";
+  ov.style.background=T().bg;
+  ov.innerHTML=`<div class="pin-card">
+    <div style="text-align:center;margin-bottom:4px">
+      <div style="font-size:38px;margin-bottom:10px">🔐</div>
+      <div style="font-family:'Instrument Serif',serif;font-size:24px;font-style:italic;color:var(--text)">Wellness OS</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-top:5px" id="pin-sub">Enter your PIN</div>
+    </div>
+    <div class="pin-dots" id="pin-dots">${Array.from({length:4},(_,i)=>`<div class="pin-dot" id="pd-${i}"></div>`).join("")}</div>
+    <div class="pin-pad">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinPress('${n}')">${n}</button>`).join("")}
+      <button class="pin-key zero" onclick="pinPress('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+}
+function showSetPin(){
+  pinBuffer='';pinMode='set1';pinTmp='';
+  const bg=document.createElement("div");
+  bg.className="modal-bg pin-overlay";bg.style.alignItems="center";bg.id="set-pin-bg";
+  bg.innerHTML=`<div class="pin-card">
+    <div style="text-align:center;margin-bottom:4px">
+      <div style="font-size:30px;margin-bottom:8px">🔐</div>
+      <div style="font-weight:700;font-size:17px;color:var(--text)">Set PIN</div>
+      <div style="font-size:12.5px;color:var(--sub);margin-top:4px" id="set-pin-sub">Enter a 4-digit PIN</div>
+    </div>
+    <div class="pin-dots" id="pin-dots">${Array.from({length:4},(_,i)=>`<div class="pin-dot" id="pd-${i}"></div>`).join("")}</div>
+    <div class="pin-pad">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinSetPress('${n}')">${n}</button>`).join("")}
+      <button class="pin-key zero" onclick="pinSetPress('0')">0</button>
+      <button class="pin-key del" onclick="pinSetDel()">⌫</button>
+    </div>
+    <button class="btn btn-surface btn-full" style="margin-top:14px;font-size:13px" onclick="document.getElementById('set-pin-bg').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+function updDots(count){document.querySelectorAll('.pin-dot').forEach((d,i)=>d.classList.toggle('filled',i<count));}
+function shakeDots(){document.querySelectorAll('.pin-dot').forEach(d=>{d.classList.add('error');setTimeout(()=>d.classList.remove('error'),500);});}
+function pinPress(n){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=n;updDots(pinBuffer.length);
+  if(pinBuffer.length===4){setTimeout(()=>{
+    if(hashPin(pinBuffer)===S.pinHash){S.pinUnlocked=true;document.getElementById("pin-overlay")?.remove();render();}
+    else{pinBuffer='';shakeDots();document.getElementById("pin-sub").textContent='Incorrect PIN — try again';}
+  },80);}
+}
+function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updDots(pinBuffer.length);}
+function pinSetPress(n){
+  if(pinBuffer.length>=4)return;
+  pinBuffer+=n;updDots(pinBuffer.length);
+  if(pinBuffer.length===4){setTimeout(()=>{
+    if(pinMode==='set1'){pinTmp=hashPin(pinBuffer);pinBuffer='';pinMode='set2';updDots(0);document.getElementById("set-pin-sub").textContent='Confirm your PIN';}
+    else if(hashPin(pinBuffer)===pinTmp){S.pinHash=pinTmp;S.pinEnabled=true;persist();document.getElementById("set-pin-bg")?.remove();render();}
+    else{pinBuffer='';pinMode='set1';pinTmp='';shakeDots();document.getElementById("set-pin-sub").textContent="PINs didn't match — try again";}
+  },80);}
+}
+function pinSetDel(){pinBuffer=pinBuffer.slice(0,-1);updDots(pinBuffer.length);}
+function disablePin(){if(confirm("Disable PIN lock?")){S.pinEnabled=false;S.pinHash='';S.pinUnlocked=false;persist();render();}}
+
+// DATA
+function exportData(){
+  const data={ptasks:S.ptasks,mtasks:S.mtasks,ftasks:S.ftasks,checks:S.checks,notes:S.notes,workout:S.workout,rewards:S.rewards,exceptions:S.exceptions,extra:S.extra,doom:S.doom,mood:S.mood,water:S.water,sleep:S.sleep,themeKey:S.themeKey,accentKey:S.accentKey};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="wellness_os_v4_backup.json";a.click();
+}
+function importData(event){
+  const f=event.target.files[0];if(!f)return;
+  const r=new FileReader();r.onload=e=>{try{
+    const d=JSON.parse(e.target.result);
+    ['ptasks','mtasks','ftasks','checks','notes','workout','rewards','exceptions','extra','doom','mood','water','sleep'].forEach(k=>{if(d[k])S[k]=d[k];});
+    if(d.themeKey)S.themeKey=d.themeKey;if(d.accentKey)S.accentKey=d.accentKey;
+    persist();render();alert('✅ Data imported!');
+  }catch{alert('❌ Invalid file');}};r.readAsText(f);
+}
+function showReport(){
+  const today=todayStr(),checks=S.checks[today]||{};
+  const l7=last7(),avg=Math.round(l7.reduce((a,d)=>a+getEff(d),0)/7);
+  const lines=[
+    `# Weekly Wellness Report`,``,
+    `Date: ${new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}`,
+    `7-Day Avg: ${avg}%  |  Streak: ${getStreak()} days`,``,
+    `## Daily Summary`,
+    ...l7.map((d,i)=>`- ${d}: ${getEff(d)}% | Mood: ${S.mood[d]?MOODS.find(m=>m.id===S.mood[d])?.emoji+''+S.mood[d]:'—'} | Water: ${S.water[d]||0}/8 | Sleep: ${S.sleep[d]?S.sleep[d].hours+'h':'—'}${S.rewards[d]?' 🌟':''}${S.exceptions[d]?' ⚡':''}${S.notes[d]?' · '+S.notes[d].slice(0,50):''}`),
+    ``,`## Today — Physical`,...S.ptasks.map(t=>`[${checks[t.id]?'x':' '}] ${t.icon} ${t.label}`),
+    ``,`## Today — Mental`,  ...S.mtasks.map(t=>`[${checks[t.id]?'x':' '}] ${t.icon} ${t.label}`),
+    ``,`## Today — Family`,  ...S.ftasks.map(t=>`[${checks[t.id]?'x':' '}] ${t.icon} ${t.label}`),
+  ].join("\n");
+  const bg=document.createElement("div");bg.className="modal-bg";bg.id="report-modal";
+  bg.onclick=e=>{if(e.target===bg)bg.remove();};
+  bg.innerHTML=`<div class="modal-box"><div class="modal-handle"></div>
+    <div class="flex-between" style="margin-bottom:14px">
+      <div class="card-title">🤖 Claude Report</div>
+      <button onclick="document.getElementById('report-modal').remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:21px;line-height:1">×</button>
+    </div>
+    <div style="font-size:12px;color:var(--sub);margin-bottom:11px">Copy & paste to Claude for personalized analysis:</div>
+    <div style="background:var(--surface);border-radius:11px;padding:13px;border:1px solid var(--border);font-size:10.5px;color:var(--text);font-family:'Courier New',monospace;white-space:pre-wrap;max-height:260px;overflow:auto;margin-bottom:13px;line-height:1.6">${lines}</div>
+    <button class="btn btn-accent btn-full" onclick="navigator.clipboard.writeText(\`${lines.replace(/`/g,'\\`')}\`).then(()=>alert('📋 Copied!')).catch(()=>alert('Select manually'))">📋 Copy to Clipboard</button>
+  </div>`;
+  document.body.appendChild(bg);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+render();
+</script>
+
+<script>
+// PWA
+const mData={name:"Wellness OS",short_name:"Wellness OS",description:"Personal Growth Tracker",start_url:"/",display:"standalone",orientation:"portrait",background_color:"#000000",theme_color:"#7C3AED",icons:[{src:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAYAAABS3GwHAAAKM0lEQVR4nO3dO28dxxnG8YdHEinTpmQ7kilbV14UwEaAtAHSp0jnOlXglM63SJWki1p/gRRRYSCFiwAJkq9gAxGvomlLJiPZpkyJZCSmWG60PNqzM+/u7HX+P0CNuOQued5n5t3ZOaQEAAAAAAAAAAAAAAAAAAAAAAD6ZqrtC2jKxx8dH7d9DX1z55OpwdfHIL9Bir0+QwvFIL4ZCr49fQ9Ery+ewu+Ovgahdxddteg/eF8fhrqWofr8C92t8vl9CkNvLrRM4VPs4ZQJRR+C0PkLtBa+q+irjm4xCP0z7HIQOnthkn/xT3rBKPZwqv6MuxqCTl5UlcKn6OtX5efetSB06mIkv+IffwEo+vaUeS26FILOXIjkLn4Kv7usr01XQtCJi6Dwh6NvQWg9AJbip/D7w/K6tRmCUVsnlij+Icu+Xq5l1Taf6LeWvKJvmsIfFt/Xs42ZoJUZgOKPi+9s0MZM0HgAKP44dTUEjU45PsVP4Q+fz2vdVDvU6k1wiuKPS/o6d2GzYmMBmDT6U/xxcoWgqVaokQBQ/MjThRDUHgBX8QNSeyFo/R6A0T9ubb/+tQaA1gc+2myFagsAxQ+LtkLQaAtE3w8fTdZJLQFwpZXRH3lcdVHHLNDYDEDrAx9NPyQLHgB+WRXqFLq+GpkBGP1h0eQs0PpzAKBNQQOQNz0x+qOMolkgZBvEDICoBQsAoz9Ca2IWYAZA1AgAolZbAGh/EELdS6JBAsDDL7QhRN3RAiFqtQSA9gch1dkGMQMgagQAUascAG6A0aaq9ccMgKgFDwA3wKhDXTfCzACIGgFA1AgAokYAEDUCgKgRAESNACBqBABRIwCIGgFA1AgAokYAEDUCgKgRAESNACBqBABRIwCIGgFA1AgAokYAELWzbV9AG0Yj6Q93pOlpv+P/9pl098/lz/erX0s/+7n/8X/8nbS5Ue5co5H0+z9JMzN+x3/6F+mzv5Y71xBEOQO8eCFtrvkfv/TjaudbWrYdv3i7/LmuXvcvfklaWyl/riGIMgCStHLP/9jrN6RpQ1Flzc1Jl+dtn7NUIQCWz33+X2lzvfy5hiDaAKwZAjAaSQuL5c5TZjRfNM4YWZYA3N+Ujo7Kn2sIog3A+mrSCvkq25aUGc3nLthnjZQlPJZBYKiiDcDBgbS95X982bakdHBKzAKX56ULF/2PX428/5ciDoAkrRpGwIXFpBWymJ5O7h/KKBM4S2iOj7kBlgiAt+kZ6ZqxmG+VCE2qzMxhCc3DB9IPT+znGBoCYGAdlaus5rwzL70xV9/56P8TUQdg73tp56H/8daCrrKebz2fdbmV/j8RdQAkWyFYCrrK0un/z2fo6a0P65gBEgTg3/7Hzs0lrYmPq9elmfPFxzzaLf64ZQawhOX776TdHf/jh4wAGFsB35HWVZAHz6R//r34mGs3/PcrLRtmAFZ/Xoo+ADsPk3sBX75Lja7Re31VWnHMPmfOSDc92qjpmWTG8WW9+R+y6AMg2QrC9z7ANQOs3pPub0hHh8XH+QRuYcm23EoAXiIAsrUEl99xP229dFm6+GbxMasr0vPn0oZjM5rPfYDlXsH6BHzoCIDcrcg41+jumiWy27FdqzE+o7slABvGPVBDRwCUjIgHB/7Hu244XW3L1qZ0eNL6uLZlz5yX3rs2+eOjUfLE2Rfr/6cRACUj4vqq//FVZ4BsD+6zK7VohL9+03+lSGL9fxwBOGEpjKI1/tnXpfkrjnNlRuGDZ+6evChwlvbnxQtp3fBOuBgQgBOWlZHRKOnN8yzdlqamij9/PGyuc4cKwJf3pUNDqxcDAnBiYy1ZlfE1qfBc/f83D6W9vdP/5wrAm29JP7qU/zHLE2CWP19FAE4cHiYjpK9JAXD1/3mtlk9h5p1v/optxyhPgF9FADIsI+StheRJbda5c9KNm/Zz+OxKzQuWdXcqM8CrCECGpUDOTScrMFk3bklnHL9padIyZJn7AEsAdndsWz5iQQAyrEuE4wXoKsi9vckjvSsAV96VZmdP/59lezajfz4CkPHkSfJWQV/jBV+m/0+5CnRq6vQscOFisuXCF+v/+QjAGNPGuOWXS55TU9LihKVRn6+9802yT7/wfJmAWbY/u84dMwIwxlIor7/x8qHXu1el12aLj3eNwq5VmuyMY1n+tM5sMSEAY8reB7jW/w8PpC3HMqtrU96NW9LZk5tsy1sgWf6cjACM2d2RvvvW//i0LXH1/xvr7j0/rtnn7Fnp5oJ0/jXpvav+10j/PxkByGFpg5bTGcCwAW6S7S3p2dPiYxaXk3sN3gATBgHIYSmYty8l25Hferv4OJ9R+PjYvVlt6bZt+fPoMNl+jXwEIIe1ZfjFL4s/btmF6fotFQvLthWgzXXbHqfYEIAc21+6W5Gsn/zU8fW2km3PPlxvWJmdNW6A4wa4EAHIcXwsrRneIOPc/mwows215A9XVDnfqXPT/xciABOELBzLPcXRUfKHK0I4Pra90y1GBGCCkCsn1q8V6txfbUtPDa1cjAjABJvr7lbEx+6Oe4vDOMuvayxC++NGACYI1YqUKcK1laR9qYr1fzcCUCBEAZVZhdnflx58Vf3cbIFwIwAFQgSgbBti+TOueR4/Sv6hGAEosHavWivyQ4VdmFXvA2h//BCAAvv70oOvy39+lV6+agFzA+yHADhUGYmrPIX99rH06D/tnDsmBMChSiFVHYXLzgJP96Wvt6udOxYEwKHsDBBiGbXsuddWwyyjxsDxSzzw+JH029+0c+5//SP5h/owAyBqBABRIwCIGgFA1IIH4PMvdFeSPnhfH4b+2ohXWk9pfYXCDICoVQ7AnU8sb9ADwqpaf8wAiBoBQNRqCQA3wgiprhtgiRkAkQsSAG6E0YYQdVfbDEAbhBDqbH8kWiBEjgAgasECkNeP0QahiqL2J9R9JzMAohY0AMwCCKWJ0V9iBkDkGgkAswAs6l76zAoeAB6KoU6h66uxFohZAD6aHP2lmgLgSikhQB5XXdTRXTR6E9xUqtFvTdZJbQGYlFZaIeRxtT513VvWOgMQAvhoq/ilDjwHIARxa/v1rz0ArlkAkNoZ/aWGZgBaIeRps/VJNdYCEQJkdaH4pQ7cA0iEIDZNP+wq0vi2hY8/mvynG7IB6MIPB2H5vr5NbqdpfAYo+uayPxRmg2HpYvFLLbVAhCAuXS1+qYUWKKuoHZJoifrO8vq1tYu41Ztg1zfNbNBffSh+qeUZIGWZCSRmgy6zvlZtv3+kEwFIEYT+6lvhpzpxEVmuEEgEoUvKvBZdKX6pgwGQ/EIg5d8XEIb6Vfm5d6n4pY4GIFUlCBJhCKnqz7hrhZ/q5EVl+YYg5VotIhRuoX+GXS1+qQcBSFmDILF0GlKZgaPLhZ/q/AWOKxOELELhVnWW7EPhp3pzoXmqhgHh9Knos3p50eMIQnv6WvipXl/8JASiPn0v+HGD+maKEAq7oRU7AAAAAAAAAAAAAAAAAAAAAAzI/wD6uutJPzGvTgAAAABJRU5ErkJggg==",sizes:"192x192",type:"image/png"}]};
+const mBlob=new Blob([JSON.stringify(mData)],{type:"application/json"});
+document.querySelector('link[rel="manifest"]')?.setAttribute('href',URL.createObjectURL(mBlob));
+const swCode=`const C="wos-v4";self.addEventListener("install",e=>self.skipWaiting());self.addEventListener("activate",e=>self.clients.claim());self.addEventListener("fetch",e=>e.respondWith(fetch(e.request).catch(()=>new Response("Offline"))));`;
+if("serviceWorker"in navigator)navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode],{type:"application/javascript"}))).catch(()=>{});
+</script>
+</body>
+</html>
