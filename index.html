@@ -434,6 +434,35 @@ body,#topbar,#bottomnav,.section-card,.chart-card,.settings-row-card,.kpi-tile,.
 
 /* ─── FOOD EMPTY ─── */
 .food-empty-art{font-size:40px;display:block;text-align:center;margin:8px 0;opacity:0.25}
+
+/* ─── SCORE ROLLUP ─── */
+@keyframes numUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+.score-pop{animation:numUp .6s cubic-bezier(.34,1.56,.64,1)}
+
+/* ─── BODY BATTERY ─── */
+.bb-bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin:10px 0 8px}
+.bb-bar-fill{height:100%;border-radius:99px;transition:width 1s var(--ease)}
+.bb-mini-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.bb-mini-tile{text-align:center;padding:7px 3px;background:#ffffff04;border-radius:var(--r8);border:1px solid var(--line)}
+
+/* ─── BREATHING ─── */
+.breath-phase-row{display:flex;gap:5px;margin-bottom:12px}
+.breath-mode-btn{flex:1;padding:8px 3px;border-radius:var(--r8);border:1.5px solid var(--line2);background:transparent;cursor:pointer;font-size:11px;font-weight:700;text-align:center;font-family:'Cabinet Grotesk',sans-serif;transition:all .18s;color:var(--sub)}
+.breath-mode-btn.on{border-color:var(--accent)55;background:var(--accent)12;color:var(--accent)}
+#breath-circle-wrap{display:flex;justify-content:center;margin-bottom:10px}
+
+/* ─── BODY GOALS ─── */
+.body-inp{width:100%;padding:9px 11px;background:#ffffff06;border:1.5px solid var(--line2);border-radius:var(--r8);color:var(--ink);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .2s}
+.body-inp:focus{border-color:var(--accent)66}
+.body-result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.body-result-row:last-child{border-bottom:none}
+.act-btn{width:100%;padding:9px 8px;border-radius:var(--r8);border:1px solid var(--line2);background:transparent;cursor:pointer;text-align:left;font-family:'Cabinet Grotesk',sans-serif;transition:all .18s}
+.act-btn.on{background:var(--accent)15;border-color:var(--accent)50}
+
+/* ─── CUSTOM FOOD ─── */
+.custom-food-row{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .12s}
+.custom-food-row:last-child{border-bottom:none}
+.custom-food-row:active{background:#ffffff04}
 </style>
 </head>
 <body>
@@ -557,6 +586,8 @@ let S={
   xt:LS.g("wos_xt",{}), d:LS.g("wos_d",{}),
   m:LS.g("wos_m",{}), w:LS.g("wos_w",{}), sl:LS.g("wos_sl",{}),
   food:LS.g("wos_food",{}),
+  body:LS.g("wos_body",{h:170,cw:70,gw:65,wks:12,sex:"male",act:"moderate"}),
+  cfoods:LS.g("wos_cfoods",[]),
 };
 function save(){
   LS.s("wos_tk",S.tk);LS.s("wos_ak",S.ak);LS.s("wos_wu",S.wu);
@@ -567,6 +598,8 @@ function save(){
   LS.s("wos_xt",S.xt);LS.s("wos_d",S.d);
   LS.s("wos_m",S.m);LS.s("wos_w",S.w);LS.s("wos_sl",S.sl);
   LS.s("wos_food",S.food);
+  LS.s("wos_body",S.body);
+  LS.s("wos_cfoods",S.cfoods);
 }
 
 // ══════════════════════════════════════
@@ -624,7 +657,10 @@ function render(){
   if(S.pe&&!S.pu){renderPin();return}
   killCharts();applyTheme();updateNav();updateTopBar();
   document.getElementById("content").innerHTML=`<div class="tab-enter">${buildTab()}</div>`;
-  requestAnimationFrame(()=>{initReveal();buildCharts()});
+  requestAnimationFrame(()=>{
+    initReveal();buildCharts();
+    if(S.tab==='home')scoreRollup();
+  });
 }
 function updateNav(){
   document.querySelectorAll(".navbtn").forEach(b=>{
@@ -649,6 +685,16 @@ function buildTab(){
   if(S.tab==="analytics")return buildAnalytics();
   if(S.tab==="settings")return buildSettings();
   return buildHome();
+}
+function scoreRollup(){
+  const el=document.getElementById('score-num');
+  if(!el)return;
+  const target=parseInt(el.textContent)||0;
+  let cur=0;
+  const step=()=>{cur=Math.min(cur+Math.ceil(target/25),target);el.textContent=cur;if(cur<target)requestAnimationFrame(step);};
+  el.textContent='0';
+  el.classList.add('score-pop');
+  requestAnimationFrame(step);
 }
 function initReveal(){
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");io.unobserve(e.target)}}),{threshold:0.05});
@@ -843,6 +889,83 @@ function buildHome(){
       <div class="sleep-qlty">
         ${SLEEP_Q.map(q=>`<button class="sleep-q-btn${sl&&sl.q===q?' on':''}" onclick="setSleepQ('${td}','${q}')">${q}</button>`).join("")}
       </div>
+    </div>
+  </div>
+
+  <div class="gap12"></div>
+
+  <!-- BODY BATTERY -->
+  ${(()=>{
+    const taskScore=all.length?Math.round(done/all.length*100):0;
+    const waterScore=Math.min(100,Math.round((water/8)*100));
+    const moodMap={awful:0,bad:25,meh:50,good:75,great:100};
+    const moodScore=mood?(moodMap[mood]||50):50;
+    const sleepScore=sl?Math.min(100,Math.round(sl.h/8*100)):50;
+    const bb=Math.round(taskScore*0.3+waterScore*0.25+moodScore*0.25+sleepScore*0.2);
+    const bbColor=bb>=75?'var(--green)':bb>=45?'var(--accent)':'var(--red)';
+    const bbLabel=bb>=80?'Fully Charged ⚡':bb>=60?'Good Energy 🔆':bb>=40?'Getting Low':'Low Battery 🪫';
+    return `<div class="section-card reveal" style="margin:0 20px">
+      <div class="section-card-head">
+        <div>
+          <div class="label">Body Battery</div>
+          <div style="font-size:12px;font-weight:700;margin-top:2px;color:${bbColor}">${bbLabel}</div>
+        </div>
+        <div style="font-family:'Fraunces',serif;font-size:48px;font-weight:300;font-style:italic;color:${bbColor};line-height:1">${bb}</div>
+      </div>
+      <div style="padding:0 16px 14px">
+        <div class="bb-bar"><div class="bb-bar-fill" style="width:${bb}%;background:${bbColor}"></div></div>
+        <div class="bb-mini-grid">
+          ${[
+            {l:'Tasks', v:taskScore, c:'var(--accent)'},
+            {l:'Water',  v:waterScore,c:'var(--blue)'},
+            {l:'Mood',   v:moodScore, c:'var(--green)'},
+            {l:'Sleep',  v:sleepScore,c:'var(--purple)'},
+          ].map(x=>`<div class="bb-mini-tile">
+            <div style="font-family:'Fraunces',serif;font-size:16px;font-style:italic;color:${x.c}">${x.v}</div>
+            <div style="font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ink3);margin-top:2px">${x.l}</div>
+          </div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+  })()}
+
+  <div class="gap8"></div>
+
+  <!-- BREATHING CARD -->
+  <div class="section-card reveal" style="margin:0 20px">
+    <div class="section-card-head">
+      <div>
+        <div class="label">Breathe</div>
+        <div id="breath-mode-title" style="font-size:12px;font-weight:700;margin-top:2px;color:var(--ink3)">4-7-8 Relaxation</div>
+      </div>
+      <button id="breath-start-btn" onclick="toggleBreath()" class="btn btn-accent" style="font-size:11px;padding:7px 14px">Start</button>
+    </div>
+    <div style="padding:0 16px 14px">
+      <div class="breath-phase-row">
+        ${[
+          {id:'478', l:'4-7-8',  s:'Relaxation'},
+          {id:'box', l:'Box',    s:'Focus'},
+          {id:'24',  l:'2-4',    s:'Quick calm'},
+        ].map(m=>`<button class="breath-mode-btn${m.id==='478'?' on':''}" id="bm-${m.id}" onclick="setBreathMode('${m.id}')">
+          <div style="font-weight:800">${m.l}</div>
+          <div style="font-size:9px;margin-top:2px;font-weight:500;opacity:.7">${m.s}</div>
+        </button>`).join("")}
+      </div>
+      <div id="breath-circle-wrap">
+        <div style="position:relative;width:100px;height:100px">
+          <svg width="100" height="100" style="position:absolute;inset:0;transform:rotate(-90deg)">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--line)" stroke-width="3"/>
+            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="3"
+              stroke-dasharray="0 276" stroke-linecap="round" id="breath-arc"
+              style="transition:stroke-dasharray .8s linear"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+            <div id="breath-phase" style="font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--ink3)">Ready</div>
+            <div id="breath-count" style="font-family:'Fraunces',serif;font-size:28px;font-style:italic;color:var(--accent);line-height:1">—</div>
+          </div>
+        </div>
+      </div>
+      <div id="breath-info" style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:8px">Tap Start to begin</div>
     </div>
   </div>
 
@@ -1267,10 +1390,73 @@ const FOOD_DB=[
   {n:"Kheer",            cat:"Sweet",  cal:150,p:4.5,c:26, f:3.5,unit:"g",  std:100},
   {n:"Jalebi",           cat:"Sweet",  cal:360,p:2,  c:65, f:10, unit:"g",  std:50},
   {n:"Ladoo (besan)",    cat:"Sweet",  cal:460,p:8,  c:55, f:23, unit:"pc", std:50},
+  // ── NOODLES ──
+  {n:"Maggi Noodles",     cat:"Noodles",cal:385,p:10, c:57, f:13, unit:"pkt",std:1},
+  {n:"Instant Noodles",   cat:"Noodles",cal:380,p:9,  c:56, f:13, unit:"pkt",std:1},
+  {n:"Hakka Noodles",     cat:"Noodles",cal:195,p:5,  c:33, f:5,  unit:"g",  std:100},
+  {n:"Chowmein",          cat:"Noodles",cal:185,p:6,  c:30, f:5,  unit:"g",  std:100},
+  {n:"Ramen",             cat:"Noodles",cal:460,p:10, c:68, f:16, unit:"bowl",std:1},
+  {n:"Pasta (cooked)",    cat:"Noodles",cal:158,p:6,  c:31, f:1,  unit:"g",  std:100},
+  // ── FAST FOOD ──
+  {n:"Pizza (slice)",     cat:"FastFood",cal:285,p:12, c:36, f:10, unit:"pc", std:1},
+  {n:"Burger",            cat:"FastFood",cal:350,p:17, c:38, f:14, unit:"pc", std:1},
+  {n:"Veg Burger",        cat:"FastFood",cal:290,p:9,  c:42, f:10, unit:"pc", std:1},
+  {n:"French Fries (sm)", cat:"FastFood",cal:220,p:3,  c:28, f:11, unit:"srv",std:1},
+  {n:"French Fries (lg)", cat:"FastFood",cal:400,p:5,  c:51, f:19, unit:"srv",std:1},
+  {n:"Momos (veg, 6pc)",  cat:"FastFood",cal:190,p:7,  c:30, f:5,  unit:"srv",std:1},
+  {n:"Momos (chicken)",   cat:"FastFood",cal:210,p:12, c:24, f:7,  unit:"srv",std:1},
+  {n:"Pani Puri (6pc)",   cat:"FastFood",cal:180,p:4,  c:30, f:5,  unit:"srv",std:1},
+  {n:"Dahi Puri (6pc)",   cat:"FastFood",cal:210,p:6,  c:32, f:7,  unit:"srv",std:1},
+  {n:"Bread Omelette",    cat:"FastFood",cal:320,p:16, c:28, f:14, unit:"srv",std:1},
+  {n:"Egg Roll",          cat:"FastFood",cal:290,p:13, c:35, f:10, unit:"pc", std:1},
+  {n:"Shawarma",          cat:"FastFood",cal:420,p:22, c:48, f:14, unit:"pc", std:1},
+  // ── DRINKS ──
+  {n:"Cold Coffee",       cat:"Drink",  cal:180,p:5,  c:28, f:6,  unit:"glass",std:1},
+  {n:"Milkshake",         cat:"Drink",  cal:230,p:7,  c:35, f:7,  unit:"glass",std:1},
+  {n:"Red Bull (250ml)",  cat:"Drink",  cal:110,p:1,  c:28, f:0,  unit:"can",  std:1},
+  // ── FRUITS ──
+  {n:"Grapes",            cat:"Fruit",  cal:69, p:0.7,c:18, f:0.2,unit:"g",  std:100},
+  {n:"Pomegranate",       cat:"Fruit",  cal:83, p:1.7,c:19, f:1.2,unit:"g",  std:100},
+  {n:"Papaya",            cat:"Fruit",  cal:43, p:0.5,c:11, f:0.3,unit:"g",  std:100},
+  {n:"Pineapple",         cat:"Fruit",  cal:50, p:0.5,c:13, f:0.1,unit:"g",  std:100},
+  // ── PROTEIN ──
+  {n:"Greek Yogurt",      cat:"Dairy",  cal:59, p:10, c:3.6,f:0.4,unit:"g",  std:100},
+  {n:"Peanut Butter",     cat:"Snack",  cal:588,p:25, c:20, f:50, unit:"g",  std:30},
+  {n:"Almonds",           cat:"Snack",  cal:579,p:21, c:22, f:50, unit:"g",  std:30},
+  {n:"Walnuts",           cat:"Snack",  cal:654,p:15, c:14, f:65, unit:"g",  std:30},
+  // ── FULL MEALS ──
+  {n:"Thali (veg)",       cat:"Meal",   cal:650,p:22, c:95, f:18, unit:"srv",std:1},
+  {n:"Thali (non-veg)",   cat:"Meal",   cal:750,p:40, c:85, f:22, unit:"srv",std:1},
+  {n:"Dosa + Sambhar",    cat:"Meal",   cal:250,p:7,  c:42, f:5,  unit:"srv",std:1},
+  {n:"Idli (3pc) + Chutney",cat:"Meal", cal:185,p:6,  c:36, f:2,  unit:"srv",std:1},
 ];
 
-// TDEE goals (default)
-const GOALS={cal:2000,p:150,c:250,f:65};
+// ── TDEE & Body Calculations (Mifflin-St Jeor) ──
+const ACT_MUL={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,athlete:1.9};
+function calcBMR(b){
+  const base=10*(b.cw||70)+6.25*(b.h||170)-5*(b.age||22);
+  return Math.round(b.sex==='female'?base-161:base+5);
+}
+function calcTDEE(b){return Math.round(calcBMR(b)*(ACT_MUL[b.act]||1.55))}
+function calcBodyGoals(b){
+  const tdee=calcTDEE(b);
+  const bmr=calcBMR(b);
+  const diff=(b.cw||70)-(b.gw||65);
+  const totalCals=diff*7700;
+  const dailyDef=Math.round(totalCals/((b.wks||12)*7));
+  const targetCal=Math.max(1200,tdee-dailyDef);
+  const weeklyChange=Math.abs(dailyDef*7/7700).toFixed(2);
+  const bmi=+((b.cw||70)/(((b.h||170)/100)**2)).toFixed(1);
+  const bmiCat=bmi<18.5?'Underweight':bmi<25?'Normal':bmi<30?'Overweight':'Obese';
+  return{tdee,bmr,targetCal,dailyDef,weeklyChange,bmi,bmiCat,diff};
+}
+function getDynGoals(){
+  const b=S.body||{};
+  if(!b.cw||!b.h||!b.gw)return{cal:2000,p:150,c:250,f:65};
+  const cal=calcBodyGoals(b).targetCal;
+  const p=Math.round((b.cw||70)*1.8);
+  return{cal,p,c:Math.round(cal*0.45/4),f:Math.round(cal*0.25/9)};
+}
 
 // ── Food search + parse ──
 let foodSearch='',foodSuggs=[],pendingFood=null;
@@ -1278,7 +1464,8 @@ let foodSearch='',foodSuggs=[],pendingFood=null;
 function searchFood(q){
   if(!q||q.length<2)return[];
   const ql=q.toLowerCase();
-  return FOOD_DB.filter(f=>f.n.toLowerCase().includes(ql)||f.cat.toLowerCase().includes(ql)).slice(0,12);
+  const all=[...FOOD_DB,...(S.cfoods||[]).map(f=>({...f,cat:'Custom'}))];
+  return all.filter(f=>f.n.toLowerCase().includes(ql)||f.cat.toLowerCase().includes(ql)).slice(0,14);
 }
 
 function parseFoodInput(raw){
@@ -1323,11 +1510,10 @@ function getFoodTotals(entries){
 function buildFood(){
   const td=today(),entries=getTodayFood();
   const totals=getFoodTotals(entries);
-  const calPct=Math.min(Math.round(totals.cal/GOALS.cal*100),100);
-  const pPct=Math.min(Math.round(totals.p/GOALS.p*100),100);
-  const cPct=Math.min(Math.round(totals.c/GOALS.c*100),100);
-  const fPct=Math.min(Math.round(totals.f/GOALS.f*100),100);
-  const calColor=totals.cal>GOALS.cal*1.1?'var(--red)':totals.cal>GOALS.cal*0.85?'var(--green)':'var(--accent)';
+  const G=getDynGoals();
+  const calPct=Math.min(Math.round(totals.cal/G.cal*100),100);
+  const calColor=totals.cal>G.cal*1.1?'var(--red)':totals.cal>G.cal*0.85?'var(--green)':'var(--accent)';
+  const remaining=G.cal-Math.round(totals.cal);
 
   const ringHTML=(val,max,col,r=20)=>{
     const circ=2*Math.PI*r,dash=Math.min(val/max,1)*circ;
@@ -1341,10 +1527,18 @@ function buildFood(){
 
   return `
   <!-- FOOD HEADER -->
-  <div style="padding:24px 20px 16px;border-bottom:1px solid var(--line)">
-    <div class="label">Nutrition</div>
-    <div style="font-family:'Fraunces',serif;font-size:36px;font-weight:300;font-style:italic;letter-spacing:-1.5px;line-height:1;color:${calColor}" class="num-roll">${totals.cal}</div>
-    <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-top:2px">kcal today · goal ${GOALS.cal}</div>
+  <div style="padding:22px 20px 14px;border-bottom:1px solid var(--line)">
+    <div class="label">Nutrition · Today</div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:48px;font-weight:300;font-style:italic;letter-spacing:-2px;line-height:1;color:${calColor}">${Math.round(totals.cal)}</div>
+        <div style="font-size:11px;color:var(--ink3);font-weight:700;margin-top:2px">kcal eaten · goal <span style="color:var(--accent)">${G.cal}</span></div>
+      </div>
+      <div style="text-align:right;padding-bottom:4px">
+        <div style="font-family:'Fraunces',serif;font-size:26px;font-style:italic;color:${remaining>=0?'var(--green)':'var(--red)'}">${Math.abs(remaining)}</div>
+        <div style="font-size:9.5px;color:var(--ink3);font-weight:700">${remaining>=0?'kcal left':'over goal'}</div>
+      </div>
+    </div>
     <div class="cal-meter" style="margin-top:10px">
       <div class="cal-meter-fill" style="width:${calPct}%;background:${calColor}"></div>
     </div>
@@ -1354,34 +1548,55 @@ function buildFood(){
   <div style="padding:14px 20px;border-bottom:1px solid var(--line)">
     <div class="food-macro-rings" style="padding:0">
       ${[
-        {l:'Protein',v:totals.p,g:GOALS.p,u:'g',c:'var(--red)'},
-        {l:'Carbs',  v:totals.c,g:GOALS.c,u:'g',c:'var(--blue)'},
-        {l:'Fat',    v:totals.f,g:GOALS.f,u:'g',c:'var(--purple)'},
-        {l:'Calories',v:totals.cal,g:GOALS.cal,u:'kcal',c:calColor},
+        {l:'Protein', v:Math.round(totals.p), g:G.p,   u:'g',   c:'var(--red)'},
+        {l:'Carbs',   v:Math.round(totals.c), g:G.c,   u:'g',   c:'var(--blue)'},
+        {l:'Fat',     v:Math.round(totals.f), g:G.f,   u:'g',   c:'var(--purple)'},
+        {l:'Calories',v:Math.round(totals.cal),g:G.cal,u:'kcal',c:calColor},
       ].map(m=>`<div class="macro-ring-tile">
         ${ringHTML(m.v,m.g,m.c,18)}
         <div class="macro-ring-val" style="color:${m.c}">${m.v}${m.u==='kcal'?'':m.u}</div>
         <div class="macro-ring-lbl">${m.l}</div>
-        <div style="font-size:8.5px;color:var(--ink3)">${Math.round(m.v/m.g*100)}%</div>
+        <div style="font-size:8px;color:var(--ink3)">/ ${m.g}${m.u==='kcal'?'':m.u}</div>
       </div>`).join("")}
     </div>
   </div>
 
   <!-- SEARCH BAR -->
   <div style="padding:14px 20px 8px;border-bottom:1px solid var(--line);position:relative" id="food-search-container">
-    <div class="label" style="margin-bottom:10px">Log Food</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div class="label">Log Food</div>
+      <button onclick="showAddCustomFood()" class="btn btn-accent" style="font-size:10px;padding:5px 11px">+ Custom</button>
+    </div>
     <div style="position:relative">
       <span class="food-search-icon" style="left:12px">🔍</span>
       <input class="food-search" id="food-input" type="text"
-        placeholder="Search food or type: 100g rice, 2 chapati..."
+        placeholder="rice, maggi, momos… or 100g rice, 2 roti"
         value="${foodSearch}"
         oninput="onFoodInput(this.value)"
         onkeydown="onFoodKey(event)"
         autocomplete="off" autocorrect="off" spellcheck="false"/>
     </div>
     <div id="food-sugg-box"></div>
-    <div style="font-size:10px;color:var(--ink3);margin-top:7px">Try: "100g chicken breast" · "2 chapati" · "1 cup dal"</div>
+    <div style="font-size:10px;color:var(--ink3);margin-top:7px">Try: "maggi" · "100g rice" · "2 chapati" · "3 egg"</div>
   </div>
+
+  <!-- CUSTOM FOODS -->
+  ${(S.cfoods&&S.cfoods.length)?`
+  <div style="padding:12px 20px 0">
+    <div class="label" style="margin-bottom:8px">My Foods</div>
+  </div>
+  <div class="section-card" style="margin:0 20px">
+    ${S.cfoods.map((f,i)=>`
+      <div class="custom-food-row" onclick="selectCustomFood(${i})">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">${f.n}</div>
+          <div style="font-size:10.5px;color:var(--ink3)">P:${f.p}g C:${f.c}g F:${f.f}g · per ${f.std}${f.unit}</div>
+        </div>
+        <div style="font-family:'Fraunces',serif;font-size:16px;font-style:italic;color:var(--accent);margin-right:8px">${f.cal}</div>
+        <button onclick="event.stopPropagation();delCustomFood(${i})" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:20px;line-height:1;padding:2px 4px">×</button>
+      </div>`).join("")}
+  </div>
+  <div class="gap8"></div>`:''}
 
   <!-- FOOD LOG -->
   <div style="padding:14px 20px 0">
@@ -1405,9 +1620,9 @@ function buildFood(){
         <button class="food-log-del" onclick="delFoodEntry('${td}',${i})">×</button>
       </div>`).join("")}
     <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center">
-      <div style="font-size:11px;font-weight:700;color:var(--ink3)">TOTAL</div>
-      <div style="font-size:11px;color:var(--ink2)">P:${totals.p}g · C:${totals.c}g · F:${totals.f}g</div>
-      <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--accent)">${totals.cal} kcal</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--ink3)">Total</div>
+      <div style="font-size:11px;color:var(--ink2)">P:${Math.round(totals.p)}g · C:${Math.round(totals.c)}g · F:${Math.round(totals.f)}g</div>
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--accent)">${Math.round(totals.cal)} kcal</div>
     </div>
   </div>
   `}
@@ -1667,6 +1882,80 @@ function buildSettings(){
 
   <div class="gap8"></div>
 
+  <div class="gap8"></div>
+
+  <!-- BODY & GOALS -->
+  <div class="settings-section">
+    <span class="settings-section-label">Body & Goals</span>
+    <div class="settings-row-card">
+      <div style="padding:14px 16px">
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px">
+          ${[
+            {k:'h',   l:'Height (cm)',       ph:'170'},
+            {k:'cw',  l:'Current Weight (kg)',ph:'70'},
+            {k:'gw',  l:'Goal Weight (kg)',   ph:'65'},
+            {k:'wks', l:'Timeline (weeks)',   ph:'12'},
+          ].map(f=>`<div>
+            <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:5px">${f.l}</div>
+            <input type="number" placeholder="${f.ph}" value="${S.body[f.k]||''}"
+              oninput="updateBody('${f.k}',this.value)"
+              class="body-inp"/>
+          </div>`).join("")}
+        </div>
+
+        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:7px">Sex</div>
+        <div style="display:flex;gap:6px;margin-bottom:12px">
+          ${[['male','♂ Male'],['female','♀ Female']].map(([v,l])=>`
+            <button onclick="updateBody('sex','${v}')"
+              class="btn ${S.body.sex===v?'btn-accent':'btn-ghost'}" style="flex:1;font-size:12px">${l}</button>
+          `).join("")}
+        </div>
+
+        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:7px">Activity Level</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:14px">
+          ${[
+            ['sedentary','🪑 Sedentary',  'Desk job, no exercise'],
+            ['light',    '🚶 Light',       '1–2x/week'],
+            ['moderate', '🏃 Moderate',    '3–5x/week'],
+            ['active',   '💪 Very Active', '6–7x/week'],
+            ['athlete',  '⚡ Athlete',     '2x/day training'],
+          ].map(([v,l,s])=>`
+            <button onclick="updateBody('act','${v}')" class="act-btn${S.body.act===v?' on':''}">
+              <div style="font-size:12px;font-weight:700;color:${S.body.act===v?'var(--accent)':'var(--ink)'}">${l}</div>
+              <div style="font-size:9.5px;color:var(--ink3);margin-top:2px">${s}</div>
+            </button>
+          `).join("")}
+        </div>
+
+        ${(()=>{
+          const b=S.body;
+          if(!b.cw||!b.h||!b.gw||!b.wks)
+            return `<div style="padding:12px;background:#ffffff05;border-radius:var(--r8);text-align:center;font-size:12px;color:var(--ink3)">Fill in all fields above to see your plan ↑</div>`;
+          const r=calcBodyGoals(b);
+          const dir=r.diff>0?'🔻 Cut':'📈 Bulk';
+          const dirColor=r.diff>0?'var(--red)':'var(--green)';
+          return `<div style="background:#ffffff05;border:1px solid var(--line2);border-radius:var(--r12);padding:13px">
+            <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:8px">Your Plan · ${dir}</div>
+            ${[
+              ['BMR (base)',          r.bmr+' kcal/day',           'var(--ink2)'],
+              ['TDEE (maintenance)',  r.tdee+' kcal/day',          'var(--ink2)'],
+              ['Daily target',        r.targetCal+' kcal/day',     'var(--accent)'],
+              ['Daily deficit',       Math.abs(r.dailyDef)+' kcal',dirColor],
+              ['Weekly change',       r.weeklyChange+' kg/wk',     dirColor],
+              ['BMI',                 r.bmi+' · '+r.bmiCat,        r.bmiCat==='Normal'?'var(--green)':'var(--accent)'],
+            ].map(([k,v,c])=>`<div class="body-result-row">
+              <span style="font-size:11px;color:var(--ink3)">${k}</span>
+              <span style="font-family:'Fraunces',serif;font-size:17px;font-style:italic;color:${c}">${v}</span>
+            </div>`).join("")}
+          </div>`;
+        })()}
+      </div>
+    </div>
+  </div>
+
+  <div class="gap8"></div>
+
   <!-- DATA -->
   <div class="settings-section">
     <span class="settings-section-label">Data</span>
@@ -1877,16 +2166,156 @@ function disablePin(){if(confirm("Disable PIN lock?")){S.pe=false;S.ph_='';S.pu=
 // ══════════════════════════════════════
 // EVENT HANDLERS
 // ══════════════════════════════════════
+// ══════════════════════════════════════
+// BODY GOALS
+// ══════════════════════════════════════
+function updateBody(key,val){
+  S.body=S.body||{h:170,cw:70,gw:65,wks:12,sex:'male',act:'moderate'};
+  S.body[key]=['h','cw','gw','wks'].includes(key)?parseFloat(val)||0:val;
+  save();
+  if(S.tab==='settings'){
+    document.getElementById("content").innerHTML=`<div>${buildTab()}</div>`;
+    requestAnimationFrame(()=>initReveal());
+  }
+}
+
+// ══════════════════════════════════════
+// CUSTOM FOODS
+// ══════════════════════════════════════
+function showAddCustomFood(){
+  const scrim=document.createElement("div");
+  scrim.className="modal-scrim";scrim.id="cf-scrim";
+  scrim.innerHTML=`<div class="modal-sheet" style="padding:22px 20px 28px">
+    <div class="modal-handle"></div>
+    <div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:16px">Add Custom Food</div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      ${[
+        {id:'cf-name',lbl:'Food Name',        type:'text',  ph:'e.g. My Protein Shake'},
+        {id:'cf-cal', lbl:'Calories (kcal)',   type:'number',ph:'350'},
+        {id:'cf-p',   lbl:'Protein (g)',       type:'number',ph:'30'},
+        {id:'cf-c',   lbl:'Carbs (g)',         type:'number',ph:'20'},
+        {id:'cf-f',   lbl:'Fat (g)',           type:'number',ph:'10'},
+        {id:'cf-std', lbl:'Serving size',      type:'number',ph:'100'},
+        {id:'cf-unit',lbl:'Unit (g/ml/pc/srv)',type:'text',  ph:'g'},
+      ].map(f=>`<div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--ink3);margin-bottom:4px">${f.lbl}</div>
+        <input id="${f.id}" type="${f.type}" placeholder="${f.ph}"
+          style="width:100%;padding:9px 12px;background:#ffffff06;border:1.5px solid var(--line2);border-radius:var(--r8);color:var(--ink);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:700;outline:none"/>
+      </div>`).join("")}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('cf-scrim').remove()">Cancel</button>
+      <button class="btn btn-accent" style="flex:1" onclick="saveCustomFood()">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function saveCustomFood(){
+  const name=document.getElementById('cf-name')?.value?.trim();
+  if(!name){alert('Enter a food name');return;}
+  const food={
+    n:name,
+    cal:parseFloat(document.getElementById('cf-cal')?.value)||0,
+    p:parseFloat(document.getElementById('cf-p')?.value)||0,
+    c:parseFloat(document.getElementById('cf-c')?.value)||0,
+    f:parseFloat(document.getElementById('cf-f')?.value)||0,
+    std:parseFloat(document.getElementById('cf-std')?.value)||100,
+    unit:document.getElementById('cf-unit')?.value?.trim()||'g',
+  };
+  S.cfoods=S.cfoods||[];
+  S.cfoods.push(food);
+  save();
+  document.getElementById('cf-scrim')?.remove();
+  render();
+}
+function delCustomFood(i){S.cfoods.splice(i,1);save();render();}
+function selectCustomFood(i){
+  const f=S.cfoods[i];
+  if(f){pendingFood=f;showFoodQtyModal(f);}
+}
+
+// ══════════════════════════════════════
+// BREATHING TIMER
+// ══════════════════════════════════════
+const BREATH_MODES={
+  '478':{phases:[{n:'Inhale',d:4},{n:'Hold',d:7},{n:'Exhale',d:8}],label:'4-7-8 Relaxation'},
+  'box':{phases:[{n:'Inhale',d:4},{n:'Hold',d:4},{n:'Exhale',d:4},{n:'Hold',d:4}],label:'Box Breathing'},
+  '24': {phases:[{n:'Inhale',d:2},{n:'Exhale',d:4}],label:'2-4 Quick Calm'},
+};
+let breathMode='478',breathRunning=false,breathTimer=null,breathPhaseIdx=0,breathSec=0,breathCycle=0;
+
+function setBreathMode(id){
+  if(breathRunning)stopBreath();
+  breathMode=id;
+  const title=document.getElementById('breath-mode-title');
+  if(title)title.textContent=BREATH_MODES[id].label;
+  Object.keys(BREATH_MODES).forEach(k=>{
+    const btn=document.getElementById('bm-'+k);
+    if(btn)btn.className='breath-mode-btn'+(k===id?' on':'');
+  });
+  resetBreathUI();
+}
+function resetBreathUI(){
+  const p=document.getElementById('breath-phase');
+  const c=document.getElementById('breath-count');
+  const arc=document.getElementById('breath-arc');
+  const info=document.getElementById('breath-info');
+  if(p)p.textContent='Ready';
+  if(c)c.textContent='—';
+  if(arc)arc.setAttribute('stroke-dasharray','0 276');
+  if(info)info.textContent='Tap Start to begin';
+}
+function toggleBreath(){breathRunning?stopBreath():startBreath();}
+function startBreath(){
+  breathRunning=true;breathPhaseIdx=0;breathSec=0;breathCycle=0;
+  const btn=document.getElementById('breath-start-btn');
+  if(btn){btn.textContent='Stop';btn.className='btn btn-danger';btn.style.cssText='font-size:11px;padding:7px 14px';}
+  runBreathTick();
+}
+function stopBreath(){
+  breathRunning=false;clearTimeout(breathTimer);
+  const btn=document.getElementById('breath-start-btn');
+  if(btn){btn.textContent='Start';btn.className='btn btn-accent';btn.style.cssText='font-size:11px;padding:7px 14px';}
+  const info=document.getElementById('breath-info');
+  if(info)info.textContent=breathCycle>0?`${breathCycle} cycle${breathCycle>1?'s':''} completed 🌿`:'Tap Start to begin';
+  resetBreathUI();
+}
+function runBreathTick(){
+  if(!breathRunning)return;
+  const phases=BREATH_MODES[breathMode].phases;
+  const phase=phases[breathPhaseIdx];
+  const remaining=phase.d-breathSec;
+  const p=document.getElementById('breath-phase');
+  const c=document.getElementById('breath-count');
+  const arc=document.getElementById('breath-arc');
+  const info=document.getElementById('breath-info');
+  if(!p||!c)return;
+  if(p)p.textContent=phase.n.toUpperCase();
+  if(c)c.textContent=remaining;
+  if(arc){const pct=breathSec/phase.d;arc.setAttribute('stroke-dasharray',`${pct*276} 276`);}
+  if(info)info.textContent=`Cycle ${breathCycle+1}`;
+  breathSec++;
+  if(breathSec>=phase.d){
+    breathSec=0;breathPhaseIdx++;
+    if(breathPhaseIdx>=phases.length){breathPhaseIdx=0;breathCycle++;}
+  }
+  breathTimer=setTimeout(runBreathTick,1000);
+}
+
 const TAB_ORDER=['home','calendar','food','analytics','settings'];
 let lastTab='home';
 function switchTab(t){
   if(t===S.tab&&!S.dv)return;
+  if(breathRunning)stopBreath();
   const fromIdx=TAB_ORDER.indexOf(S.tab),toIdx=TAB_ORDER.indexOf(t);
   lastTab=S.tab;S.tab=t;S.dv=false;foodSearch='';foodSuggs=[];
   killCharts();applyTheme();updateNav();updateTopBar();
   const cls=toIdx>fromIdx?'tab-slide-left':'tab-slide-right';
   document.getElementById("content").innerHTML=`<div class="${cls}">${buildTab()}</div>`;
-  requestAnimationFrame(()=>{initReveal();buildCharts()});
+  requestAnimationFrame(()=>{
+    initReveal();buildCharts();
+    if(t==='home')scoreRollup();
+  });
   document.getElementById("scroll-area").scrollTop=0;
 }
 function prevMonth(){S.cm===0?(S.cm=11,S.cy--):S.cm--;render()}
