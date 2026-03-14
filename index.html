@@ -1663,7 +1663,7 @@ Be concise, warm, specific to their actual data. Max 3-4 sentences. Use numbers 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
