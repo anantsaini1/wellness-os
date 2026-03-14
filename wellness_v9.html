@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="W·OS"/>
+<title>Wellness OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Fraunces:ital,opsz,wght@0,9..144,300;1,9..144,300;1,9..144,400&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;-webkit-font-smoothing:antialiased}
+body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t);overscroll-behavior:none}
+:root{
+  --bg:#080706;--p2:#0e0d0b;--p3:#151310;
+  --ln:#ffffff12;--l2:#ffffff22;
+  --t:#f0ede8;--t2:#c8c0b4;--t3:#7a7268;
+  --ac:#e8d5a3;--ac2:#c4a96d;
+  --red:#e85c4a;--green:#6dba8a;--blue:#7ab3e8;--purple:#b48ae8;
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px;
+  --ease:cubic-bezier(.4,0,.2,1);--spring:cubic-bezier(.34,1.56,.64,1);
+}
+#app{height:100dvh;display:flex;flex-direction:column;max-width:480px;margin:0 auto;position:relative;overflow:hidden}
+#topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--ln);background:var(--p2);flex-shrink:0;z-index:10}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-w{font-family:'Fraunces',serif;font-size:32px;font-style:italic;font-weight:300;color:var(--ac);letter-spacing:-2px;line-height:1}
+.logo-meta{display:flex;flex-direction:column;gap:2px}
+.logo-title{font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:var(--t2);line-height:1}
+.logo-by{font-size:7px;font-weight:700;color:var(--t3);line-height:1}
+#topbar-right{display:flex;align-items:center;gap:10px}
+#date-chip{font-size:11px;font-weight:700;color:var(--t3)}
+.ring-sm{position:relative;width:34px;height:34px}
+.ring-sm svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-sm span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:var(--ac)}
+#scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#scroll::-webkit-scrollbar{display:none}
+.pad{padding-bottom:20px}
+#nav{display:flex;background:var(--p2);border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom,0);flex-shrink:0}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px 6px;border:none;background:transparent;cursor:pointer;gap:3px}
+.nb svg{width:20px;height:20px;stroke:var(--t3);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s}
+.nb span{font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--t3);transition:color .2s}
+.nb.on svg{stroke:var(--ac)}
+.nb.on span{color:var(--ac)}
+/* cards */
+.card{background:var(--p2);border:1px solid var(--ln);border-radius:var(--r16);margin:0 14px;overflow:hidden}
+.card+.card{margin-top:8px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:13px 15px 10px}
+.card-prog{height:2px;background:var(--ln)}
+.card-prog-fill{height:100%;border-radius:2px;transition:width .8s var(--ease)}
+/* tasks */
+.trow{display:flex;align-items:center;gap:11px;padding:10px 15px;border-top:1px solid var(--ln);cursor:pointer;-webkit-user-select:none;user-select:none;transition:background .1s}
+.trow:active{background:#ffffff05}
+.tcb{width:22px;height:22px;border-radius:6px;border:1.5px solid var(--l2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--ac);transition:all .15s;flex-shrink:0}
+.tcb.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.tico{font-size:16px;flex-shrink:0}
+.tlbl{font-size:13px;font-weight:700;color:var(--t);flex:1;transition:color .2s}
+.tlbl.done{color:var(--t3);text-decoration:line-through}
+/* label */
+.lbl{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3)}
+/* gaps */
+.g8{height:8px}.g12{height:12px}.g16{height:16px}
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:9px 16px;border-radius:var(--r12);border:1.5px solid var(--l2);background:transparent;font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:800;color:var(--t);cursor:pointer;transition:all .15s;letter-spacing:.2px}
+.btn-ac{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+.btn-ghost{background:#ffffff06}
+.btn-red{background:var(--red)15;border-color:var(--red)40;color:var(--red)}
+.btn-full{width:100%}
+.btn:active{transform:scale(.97)}
+/* mood */
+.mrow{display:flex;gap:7px;padding:12px 14px}
+.mbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px;border-radius:var(--r12);border:1.5px solid var(--l2);background:transparent;cursor:pointer;transition:all .15s}
+.mbtn.on{border-color:var(--ac)55;background:var(--ac)0f}
+.memi{font-size:22px}
+.mlbl{font-size:8px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--t3)}
+.mbtn.on .mlbl{color:var(--ac)}
+/* water */
+.wdrops{display:flex;gap:4px;justify-content:center;flex-wrap:wrap;padding:4px 0 8px}
+.wdrop{cursor:pointer;transition:transform .12s;width:30px;height:38px}
+.wdrop:active{transform:scale(.85)}
+/* sleep */
+.sqrow{display:flex;gap:5px;padding:6px 14px 14px}
+.sqbtn{flex:1;padding:7px 2px;border-radius:var(--r8);border:1.5px solid var(--l2);background:transparent;font-size:10px;font-weight:700;text-align:center;cursor:pointer;color:var(--t3);font-family:'Cabinet Grotesk',sans-serif;transition:all .15s}
+.sqbtn.on{border-color:var(--ac)55;background:var(--ac)12;color:var(--ac)}
+/* calendar */
+.cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:10px 10px 8px}
+.chd{text-align:center;font-size:9px;font-weight:800;color:var(--t3);padding:3px 0;letter-spacing:.4px}
+.cday{aspect-ratio:1;border-radius:var(--r8);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:all .12s;flex-direction:column;gap:1px}
+.cday:active{transform:scale(.88)}
+.cdn{font-size:12px;font-weight:700;color:var(--t)}
+.cday.today .cdn{color:var(--ac);font-weight:900}
+.cday.sel{background:var(--ac)}
+.cday.sel .cdn{color:var(--bg);font-weight:900}
+.cday.other .cdn{color:var(--t3)}
+.cdot{width:4px;height:4px;border-radius:50%}
+/* food */
+.fsearch{width:100%;padding:10px 12px 10px 36px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r12);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;outline:none;transition:border-color .2s}
+.fsearch:focus{border-color:var(--ac)60}
+.fsugg{background:var(--p3);border:1px solid var(--l2);border-radius:var(--r12);margin-top:6px;overflow:hidden;max-height:220px;overflow-y:auto}
+.fsugg-item{padding:10px 13px;cursor:pointer;border-top:1px solid var(--ln);transition:background .1s;display:flex;justify-content:space-between;align-items:center}
+.fsugg-item:first-child{border-top:none}
+.fsugg-item:active{background:#ffffff05}
+.flog-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--ln)}
+.flog-item:first-child{border-top:none}
+/* modal */
+.scrim{position:fixed;inset:0;background:#00000070;z-index:200;display:flex;align-items:flex-end;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.sheet{background:var(--p2);border-radius:22px 22px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:18px 17px 32px}
+.shandle{width:36px;height:4px;border-radius:2px;background:var(--l2);margin:0 auto 16px}
+/* analytics */
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 14px}
+.stile{background:var(--p3);border:1px solid var(--ln);border-radius:var(--r12);padding:13px}
+.sval{font-family:'Fraunces',serif;font-size:34px;font-style:italic;font-weight:300;line-height:1;color:var(--ac)}
+.slbl{font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-top:4px}
+/* settings */
+.ss-lbl{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding:13px 4px 7px;display:block}
+.ss-card{background:var(--p2);border:1px solid var(--ln);border-radius:var(--r16);overflow:hidden;margin:0 14px}
+.ss-row{display:flex;align-items:center;justify-content:space-between;padding:12px 15px;border-top:1px solid var(--ln)}
+.ss-row:first-child{border-top:none}
+/* body inputs */
+.binp{width:100%;padding:9px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:700;outline:none;transition:border-color .2s}
+.binp:focus{border-color:var(--ac)60}
+/* theme swatches */
+.tsw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:transform .12s;position:relative;overflow:hidden;flex-shrink:0}
+.tsw.on{border-color:var(--ac);transform:scale(1.18)}
+.tsw:active{transform:scale(.9)}
+.asw{width:26px;height:26px;border-radius:50%;cursor:pointer;transition:transform .12s;flex-shrink:0}
+.asw.on{outline:2.5px solid var(--t);outline-offset:2px}
+.asw:active{transform:scale(.88)}
+/* battery */
+.bbbar{height:7px;border-radius:99px;background:var(--ln);overflow:hidden;margin:6px 0 10px}
+.bbfill{height:100%;border-radius:99px;transition:width 1s var(--ease)}
+.bbgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.bbtile{text-align:center;padding:8px 3px;background:#ffffff04;border-radius:var(--r8);border:1px solid var(--ln)}
+/* breath */
+.bmbtn{flex:1;padding:8px 3px;border-radius:var(--r8);border:1.5px solid var(--l2);background:transparent;cursor:pointer;font-size:11px;font-weight:700;text-align:center;font-family:'Cabinet Grotesk',sans-serif;transition:all .15s;color:var(--t3)}
+.bmbtn.on{border-color:var(--ac)55;background:var(--ac)12;color:var(--ac)}
+/* cal meter */
+.cmeter{height:5px;border-radius:99px;background:var(--ln);overflow:hidden;margin:8px 0}
+.cmfill{height:100%;border-radius:99px;transition:width .7s var(--ease)}
+/* macro rings */
+.mrings{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:12px 14px}
+.mring-tile{display:flex;flex-direction:column;align-items:center;gap:2px}
+/* wl row */
+.wlrow{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--ln)}
+.wlrow:first-child{border-top:none}
+/* chart card */
+.chartcard{background:var(--p2);border:1px solid var(--ln);border-radius:var(--r16);margin:0 14px;overflow:hidden}
+.chartcard-head{padding:11px 15px 8px;border-bottom:1px solid var(--ln)}
+.chartcard-body{padding:10px 8px 8px}
+/* pin */
+.pin-scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;gap:15px}
+.pin-logo{font-family:'Fraunces',serif;font-size:52px;font-weight:300;font-style:italic;color:var(--ac);letter-spacing:-2px}
+.pin-sub{font-size:13px;font-weight:700;color:var(--t3)}
+.pin-dots{display:flex;gap:14px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--l2);transition:all .15s}
+.pin-dot.fill{background:var(--ac);border-color:var(--ac)}
+.pin-dot.err{border-color:var(--red);background:var(--red)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,68px);gap:12px}
+.pin-key{width:68px;height:68px;border-radius:50%;border:1.5px solid var(--l2);background:#ffffff04;font-size:22px;font-weight:700;color:var(--t);cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:all .12s}
+.pin-key:active{background:var(--ac);color:var(--bg);transform:scale(.9)}
+.pin-key.zero{grid-column:2}.pin-key.del{grid-column:3}
+/* anim */
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes slideR{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes slideL{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+@keyframes numPop{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.tab-r{animation:slideR .2s var(--ease)}
+.tab-l{animation:slideL .2s var(--ease)}
+.rev{opacity:0}
+.rev.shown{opacity:1;animation:fadeUp .28s var(--ease) forwards}
+.npop{animation:numPop .45s var(--spring)}
+/* glass */
+.glass-body{background:linear-gradient(135deg,#dce8ff 0%,#eddcff 38%,#ffdce8 65%,#dcffe8 100%)!important}
+.glass-mode .card,.glass-mode .chartcard,.glass-mode .ss-card,
+.glass-mode #topbar,.glass-mode #nav,.glass-mode .sheet,.glass-mode .stile,.glass-mode .bbtile{
+  background:rgba(255,255,255,.62)!important;
+  backdrop-filter:blur(28px) saturate(2);-webkit-backdrop-filter:blur(28px) saturate(2);
+  border-color:rgba(255,255,255,.85)!important;
+  box-shadow:0 2px 18px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.glass-mode #scroll{background:transparent!important}
+.glass-mode .trow{border-color:rgba(0,0,0,.06)!important}
+.glass-mode .fsearch{background:rgba(255,255,255,.5)!important;border-color:rgba(0,0,0,.1)!important}
+.glass-mode .card-prog{background:rgba(0,0,0,.06)!important}
+.glass-mode .cmeter{background:rgba(0,0,0,.06)!important}
+.glass-mode .pin-scr{background:rgba(235,240,255,.92);backdrop-filter:blur(30px);-webkit-backdrop-filter:blur(30px)}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div class="logo">
+      <span class="logo-w">W·OS</span>
+      <div class="logo-meta">
+        <span class="logo-title">Wellness OS</span>
+        <span class="logo-by">by Anant Raj Saini · Claude AI</span>
+      </div>
+    </div>
+    <div id="topbar-right">
+      <span id="date-chip"></span>
+      <div class="ring-sm">
+        <svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="#ffffff0d" stroke-width="3"/><circle id="tr-ring" cx="17" cy="17" r="14" fill="none" stroke="#e8d5a3" stroke-width="3" stroke-dasharray="0 87.9" stroke-linecap="round" style="transition:stroke-dasharray .8s var(--ease)"/></svg>
+        <span id="tr-pct">0%</span>
+      </div>
+    </div>
+  </div>
+  <div id="scroll"><div id="content" class="pad"></div></div>
+  <nav id="nav">
+    <button class="nb on" data-tab="home" onclick="switchTab('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg><span>Home</span></button>
+    <button class="nb" data-tab="calendar" onclick="switchTab('calendar')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg><span>Log</span></button>
+    <button class="nb" data-tab="food" onclick="switchTab('food')">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/><path d="M6 1v3M10 1v3M14 1v3"/></svg><span>Food</span></button>
+    <button class="nb" data-tab="analytics" onclick="switchTab('analytics')">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Stats</span></button>
+    <button class="nb" data-tab="settings" onclick="switchTab('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
+  </nav>
+</div>
+<script>
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
+const THEMES={
+  void:  {n:'Void',  bg:'#080706',p2:'#0e0d0b',p3:'#151310',ln:'#ffffff12',l2:'#ffffff22',t:'#f0ede8',t2:'#c8c0b4',t3:'#7a7268',d:true},
+  coal:  {n:'Coal',  bg:'#0a0a0a',p2:'#121212',p3:'#1a1a1a',ln:'#ffffff12',l2:'#ffffff22',t:'#f5f5f5',t2:'#c2c2c2',t3:'#727272',d:true},
+  abyss: {n:'Abyss', bg:'#03060f',p2:'#060c1a',p3:'#0c1430',ln:'#1e2e54',l2:'#2e4272',t:'#dde8ff',t2:'#98aedd',t3:'#526298',d:true},
+  forest:{n:'Forest',bg:'#040a05',p2:'#081008',p3:'#0e180e',ln:'#162e16',l2:'#1e401e',t:'#dff0e0',t2:'#98ca9a',t3:'#507854',d:true},
+  ember: {n:'Ember', bg:'#0a0503',p2:'#130806',p3:'#1e0e08',ln:'#341608',l2:'#4c200c',t:'#faeae0',t2:'#d49272',t3:'#8e6040',d:true},
+  ash:   {n:'Ash',   bg:'#f0eeea',p2:'#ffffff',p3:'#f8f6f2',ln:'#e0dbd0',l2:'#ccc4b8',t:'#1a1714',t2:'#524a42',t3:'#9a9088',d:false},
+  paper: {n:'Paper', bg:'#fdf8f0',p2:'#ffffff',p3:'#f8f2e8',ln:'#e8d8b8',l2:'#d0b888',t:'#2a1e0a',t2:'#6a5030',t3:'#a88858',d:false},
+  glass: {n:'Glass', bg:'#f0f4f8',p2:'rgba(255,255,255,.62)',p3:'rgba(255,255,255,.42)',ln:'rgba(0,0,0,.07)',l2:'rgba(0,0,0,.12)',t:'#1a1f2e',t2:'#4a5568',t3:'#8a9ab8',d:false,glass:true},
+};
+const ACCENTS={
+  gold: {p:'#e8d5a3',g2:'#c4a96d',n:'Gold'},
+  ember:{p:'#e85c4a',g2:'#c04030',n:'Ember'},
+  sage: {p:'#6dba8a',g2:'#4a9060',n:'Sage'},
+  sky:  {p:'#7ab3e8',g2:'#5080c0',n:'Sky'},
+  iris: {p:'#b48ae8',g2:'#8060c0',n:'Iris'},
+  blush:{p:'#e88ab0',g2:'#c06080',n:'Blush'},
+  sand: {p:'#d4b896',g2:'#a88060',n:'Sand'},
+};
+const DEF_PHYS=[
+  {id:'p1',l:'Morning Routine',i:'🌅'},{id:'p2',l:'Night Routine',i:'🌙'},
+  {id:'p3',l:'Daily Stretching',i:'🤸'},{id:'p4',l:'Water Intake',i:'💧'},
+  {id:'p5',l:'Healthy Food',i:'🥗'},{id:'p6',l:'No Cheat Meal',i:'🚫'},
+  {id:'p7',l:'Daily Hygiene',i:'🧼'},{id:'p8',l:'Workout',i:'💪'},
+  {id:'p9',l:'No Fapping',i:'🔒'},
+];
+const DEF_MENT=[
+  {id:'m1',l:'Daily Lecture',i:'🎓'},{id:'m2',l:'Self-Study',i:'📖'},
+  {id:'m3',l:'Book Reading',i:'📚'},{id:'m4',l:'No Doom Scrolling',i:'📵'},
+  {id:'m5',l:'Mindfulness',i:'🧘'},
+];
+const DEF_FAM=[
+  {id:'f1',l:'Called Family',i:'📞'},{id:'f2',l:'Quality Time',i:'❤️'},
+  {id:'f3',l:'Helped Someone',i:'🤝'},
+];
+const DEF_WO={0:[],1:['Push Ups','Bench Press','Shoulder Press'],2:['Running','Cycling'],3:['Pull Ups','Rows','Bicep Curls'],4:['Rest'],5:['Squats','Lunges','Leg Press'],6:['HIIT','Core','Plank']};
+const MOODS=[
+  {id:'awful',e:'😞',l:'Awful'},{id:'bad',e:'😕',l:'Bad'},
+  {id:'meh',e:'😐',l:'Meh'},{id:'good',e:'🙂',l:'Good'},{id:'great',e:'😄',l:'Great'},
+];
+const SQ=['Poor','Okay','Good','Great'];
+const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const ACH=[
+  {id:'a1',n:'First Step',  e:'🌱',d:'Complete any task',    f:s=>Object.values(s.c).some(d=>Object.values(d).some(v=>v))},
+  {id:'a2',n:'Week Warrior',e:'🔥',d:'7-day streak',          f:s=>streak(s)>=7},
+  {id:'a3',n:'Perfect Day', e:'⭐',d:'100% score',             f:s=>eff(today(),s)===100},
+  {id:'a4',n:'Hydrated',    e:'💧',d:'Hit water goal',         f:s=>s.w[today()]>=(Math.round((s.wgoal||2)*4))},
+  {id:'a5',n:'Month Strong',e:'🏆',d:'30-day streak',          f:s=>streak(s)>=30},
+  {id:'a6',n:'Food Logger', e:'🍱',d:'Log food 7 days',        f:s=>Object.keys(s.food||{}).length>=7},
+];
+const ACT_MUL={sedentary:1.2,light:1.375,moderate:1.55,active:1.725,athlete:1.9};
+const FOOD_DB=[
+  // GRAINS
+  {n:'Rice (cooked)',      cat:'Grains',  cal:130,p:2.7,c:28, f:0.3,unit:'g',  std:100},
+  {n:'Basmati Rice',       cat:'Grains',  cal:370,p:8,  c:78, f:0.9,unit:'g',  std:100},
+  {n:'Brown Rice',         cat:'Grains',  cal:355,p:7.5,c:74, f:2.7,unit:'g',  std:100},
+  {n:'Chapati / Roti',     cat:'Grains',  cal:297,p:9,  c:52, f:6,  unit:'pc', std:40},
+  {n:'Paratha (plain)',    cat:'Grains',  cal:326,p:8,  c:44, f:13, unit:'pc', std:80},
+  {n:'Paratha (aloo)',     cat:'Grains',  cal:260,p:6,  c:38, f:9,  unit:'pc', std:100},
+  {n:'Naan',               cat:'Grains',  cal:310,p:9,  c:55, f:6,  unit:'pc', std:90},
+  {n:'Puri',               cat:'Grains',  cal:340,p:7,  c:42, f:16, unit:'pc', std:50},
+  {n:'Idli',               cat:'Grains',  cal:58, p:2,  c:12, f:0.2,unit:'pc', std:50},
+  {n:'Dosa (plain)',       cat:'Grains',  cal:133,p:3.5,c:24, f:2.5,unit:'pc', std:100},
+  {n:'Masala Dosa',        cat:'Grains',  cal:215,p:5,  c:35, f:6,  unit:'pc', std:150},
+  {n:'Poha',               cat:'Grains',  cal:180,p:3,  c:36, f:3,  unit:'g',  std:100},
+  {n:'Oats',               cat:'Grains',  cal:389,p:17, c:66, f:7,  unit:'g',  std:100},
+  {n:'Bread (white)',      cat:'Grains',  cal:265,p:9,  c:49, f:3,  unit:'pc', std:28},
+  {n:'Bread (brown)',      cat:'Grains',  cal:243,p:10, c:44, f:3.5,unit:'pc', std:28},
+  // DAL
+  {n:'Masoor Dal (cooked)',cat:'Dal',     cal:116,p:9,  c:20, f:0.4,unit:'g',  std:100},
+  {n:'Toor Dal',           cat:'Dal',     cal:335,p:22, c:58, f:1.7,unit:'g',  std:100},
+  {n:'Moong Dal (cooked)', cat:'Dal',     cal:105,p:7,  c:19, f:0.4,unit:'g',  std:100},
+  {n:'Chana Dal',          cat:'Dal',     cal:360,p:22, c:60, f:5,  unit:'g',  std:100},
+  {n:'Rajma (cooked)',     cat:'Dal',     cal:127,p:9,  c:22, f:0.5,unit:'g',  std:100},
+  {n:'Chole / Chana',      cat:'Dal',     cal:164,p:9,  c:27, f:2.6,unit:'g',  std:100},
+  {n:'Dal Makhani',        cat:'Dal',     cal:130,p:7,  c:18, f:4,  unit:'g',  std:100},
+  {n:'Sambhar',            cat:'Dal',     cal:55, p:3,  c:8,  f:1.5,unit:'g',  std:100},
+  // SABZI
+  {n:'Aloo (boiled)',      cat:'Sabzi',   cal:87, p:1.9,c:20, f:0.1,unit:'g',  std:100},
+  {n:'Aloo Sabzi',         cat:'Sabzi',   cal:145,p:2.5,c:22, f:5,  unit:'g',  std:100},
+  {n:'Aloo Gobi',          cat:'Sabzi',   cal:130,p:3,  c:18, f:5,  unit:'g',  std:100},
+  {n:'Aloo Gajar',         cat:'Sabzi',   cal:110,p:2,  c:18, f:3.5,unit:'g',  std:100},
+  {n:'Aloo Matar',         cat:'Sabzi',   cal:135,p:4,  c:20, f:4.5,unit:'g',  std:100},
+  {n:'Gajar (carrot)',     cat:'Sabzi',   cal:41, p:0.9,c:10, f:0.2,unit:'g',  std:100},
+  {n:'Gobhi / Cauliflower',cat:'Sabzi',   cal:25, p:2,  c:5,  f:0.3,unit:'g',  std:100},
+  {n:'Gobhi Sabzi',        cat:'Sabzi',   cal:120,p:3,  c:14, f:5.5,unit:'g',  std:100},
+  {n:'Palak (spinach)',    cat:'Sabzi',   cal:23, p:2.9,c:3.6,f:0.4,unit:'g',  std:100},
+  {n:'Palak Paneer',       cat:'Sabzi',   cal:210,p:11, c:8,  f:16, unit:'g',  std:100},
+  {n:'Palak Dal',          cat:'Sabzi',   cal:98, p:6,  c:14, f:2.5,unit:'g',  std:100},
+  {n:'Bhindi (okra)',      cat:'Sabzi',   cal:33, p:1.9,c:7.5,f:0.2,unit:'g',  std:100},
+  {n:'Baingan Bharta',     cat:'Sabzi',   cal:90, p:2.5,c:10, f:4,  unit:'g',  std:100},
+  {n:'Matar (peas)',       cat:'Sabzi',   cal:81, p:5.4,c:14, f:0.4,unit:'g',  std:100},
+  {n:'Matar Paneer',       cat:'Sabzi',   cal:220,p:10, c:12, f:15, unit:'g',  std:100},
+  {n:'Lauki (bottle gourd)',cat:'Sabzi',  cal:17, p:0.6,c:3.7,f:0.1,unit:'g',  std:100},
+  {n:'Lauki Sabzi',        cat:'Sabzi',   cal:70, p:1.5,c:9,  f:3,  unit:'g',  std:100},
+  {n:'Karela (bitter g.)', cat:'Sabzi',   cal:17, p:1,  c:3.7,f:0.2,unit:'g',  std:100},
+  {n:'Arbi / Colocasia',   cat:'Sabzi',   cal:97, p:1.5,c:23, f:0.1,unit:'g',  std:100},
+  {n:'Shimla Mirch',       cat:'Sabzi',   cal:31, p:1,  c:6,  f:0.3,unit:'g',  std:100},
+  {n:'Tinda',              cat:'Sabzi',   cal:21, p:0.5,c:4.6,f:0.2,unit:'g',  std:100},
+  {n:'Tamatar (tomato)',   cat:'Sabzi',   cal:18, p:0.9,c:3.9,f:0.2,unit:'g',  std:100},
+  {n:'Mix Veg Sabzi',      cat:'Sabzi',   cal:105,p:3,  c:14, f:4,  unit:'g',  std:100},
+  // NON-VEG
+  {n:'Chicken Breast',     cat:'NonVeg',  cal:165,p:31, c:0,  f:3.6,unit:'g',  std:100},
+  {n:'Chicken (curry)',    cat:'NonVeg',  cal:195,p:22, c:4,  f:10, unit:'g',  std:100},
+  {n:'Egg (whole)',        cat:'NonVeg',  cal:155,p:13, c:1.1,f:11, unit:'pc', std:60},
+  {n:'Egg White',          cat:'NonVeg',  cal:52, p:11, c:0.7,f:0.2,unit:'pc', std:33},
+  {n:'Egg Bhurji (2 eggs)',cat:'NonVeg',  cal:250,p:16, c:4,  f:18, unit:'srv',std:1},
+  {n:'Mutton (curry)',     cat:'NonVeg',  cal:243,p:25, c:2,  f:15, unit:'g',  std:100},
+  {n:'Fish (rohu)',        cat:'NonVeg',  cal:97, p:17, c:0,  f:3,  unit:'g',  std:100},
+  {n:'Tuna (canned)',      cat:'NonVeg',  cal:116,p:26, c:0,  f:1,  unit:'g',  std:100},
+  // DAIRY
+  {n:'Milk (full fat)',    cat:'Dairy',   cal:61, p:3.2,c:4.8,f:3.3,unit:'ml', std:100},
+  {n:'Curd / Dahi',        cat:'Dairy',   cal:61, p:3.5,c:4.7,f:3.3,unit:'g',  std:100},
+  {n:'Paneer',             cat:'Dairy',   cal:265,p:18, c:1.2,f:20, unit:'g',  std:100},
+  {n:'Paneer Bhurji',      cat:'Dairy',   cal:290,p:18, c:6,  f:22, unit:'g',  std:100},
+  {n:'Butter',             cat:'Dairy',   cal:717,p:0.9,c:0.1,f:81, unit:'g',  std:10},
+  {n:'Ghee',               cat:'Dairy',   cal:900,p:0,  c:0,  f:100,unit:'g',  std:10},
+  {n:'Cheese (slice)',     cat:'Dairy',   cal:402,p:25, c:1.3,f:33, unit:'pc', std:25},
+  {n:'Greek Yogurt',       cat:'Dairy',   cal:59, p:10, c:3.6,f:0.4,unit:'g',  std:100},
+  {n:'Whey Protein (scoop)',cat:'Dairy',  cal:120,p:25, c:3,  f:1.5,unit:'scoop',std:1},
+  // MEALS
+  {n:'Dal Rice',           cat:'Meal',    cal:185,p:7,  c:35, f:2.5,unit:'g',  std:100},
+  {n:'Khichdi',            cat:'Meal',    cal:160,p:7,  c:28, f:2.5,unit:'g',  std:100},
+  {n:'Biryani (veg)',      cat:'Meal',    cal:220,p:5,  c:38, f:7,  unit:'g',  std:100},
+  {n:'Biryani (chicken)',  cat:'Meal',    cal:280,p:16, c:36, f:8,  unit:'g',  std:100},
+  {n:'Rajma Chawal',       cat:'Meal',    cal:180,p:8,  c:33, f:2.5,unit:'g',  std:100},
+  {n:'Thali (veg)',        cat:'Meal',    cal:650,p:22, c:95, f:18, unit:'srv',std:1},
+  {n:'Thali (non-veg)',    cat:'Meal',    cal:750,p:40, c:85, f:22, unit:'srv',std:1},
+  {n:'Chole Bhature',      cat:'Meal',    cal:490,p:14, c:68, f:17, unit:'srv',std:1},
+  {n:'Pav Bhaji',          cat:'Meal',    cal:280,p:7,  c:42, f:9,  unit:'srv',std:1},
+  // FAST FOOD
+  {n:'Maggi Noodles',      cat:'FastFood',cal:385,p:10, c:57, f:13, unit:'pkt',std:1},
+  {n:'Instant Noodles',    cat:'FastFood',cal:380,p:9,  c:56, f:13, unit:'pkt',std:1},
+  {n:'Hakka Noodles',      cat:'FastFood',cal:195,p:5,  c:33, f:5,  unit:'g',  std:100},
+  {n:'Ramen (bowl)',       cat:'FastFood',cal:460,p:10, c:68, f:16, unit:'bowl',std:1},
+  {n:'Pizza (slice)',      cat:'FastFood',cal:285,p:12, c:36, f:10, unit:'pc', std:1},
+  {n:'Burger',             cat:'FastFood',cal:350,p:17, c:38, f:14, unit:'pc', std:1},
+  {n:'Veg Burger',         cat:'FastFood',cal:290,p:9,  c:42, f:10, unit:'pc', std:1},
+  {n:'French Fries',       cat:'FastFood',cal:310,p:4,  c:40, f:15, unit:'srv',std:1},
+  {n:'Momos (veg 6pc)',    cat:'FastFood',cal:190,p:7,  c:30, f:5,  unit:'srv',std:1},
+  {n:'Momos (chicken 6pc)',cat:'FastFood',cal:210,p:12, c:24, f:7,  unit:'srv',std:1},
+  {n:'Samosa',             cat:'FastFood',cal:262,p:4.5,c:33, f:13, unit:'pc', std:100},
+  {n:'Pani Puri (6pc)',    cat:'FastFood',cal:180,p:4,  c:30, f:5,  unit:'srv',std:1},
+  {n:'Pasta (cooked)',     cat:'FastFood',cal:158,p:6,  c:31, f:1,  unit:'g',  std:100},
+  {n:'Shawarma',           cat:'FastFood',cal:420,p:22, c:48, f:14, unit:'pc', std:1},
+  // RUSSIAN
+  {n:'Pelmeni (10 pcs)',   cat:'Russian', cal:280,p:14, c:30, f:10, unit:'srv',std:1},
+  {n:'Borscht',            cat:'Russian', cal:70, p:3,  c:10, f:2.5,unit:'ml', std:100},
+  {n:'Buckwheat (cooked)', cat:'Russian', cal:92, p:3.4,c:20, f:0.6,unit:'g',  std:100},
+  {n:'Buckwheat (raw)',    cat:'Russian', cal:343,p:13, c:71, f:3.4,unit:'g',  std:100},
+  {n:'Blini (pancake)',    cat:'Russian', cal:165,p:5,  c:22, f:6,  unit:'pc', std:60},
+  {n:'Syrniki (2 pcs)',    cat:'Russian', cal:280,p:14, c:26, f:12, unit:'srv',std:1},
+  {n:'Kefir (1%)',         cat:'Russian', cal:40, p:3.4,c:4.7,f:1,  unit:'ml', std:100},
+  {n:'Ryazhenka',          cat:'Russian', cal:58, p:2.8,c:4.2,f:3.2,unit:'ml', std:100},
+  {n:'Tvorog (cottage)',   cat:'Russian', cal:101,p:16, c:3,  f:3,  unit:'g',  std:100},
+  {n:'Smetana (30%)',      cat:'Russian', cal:206,p:2.8,c:3.2,f:20, unit:'g',  std:30},
+  {n:'Olivye Salad',       cat:'Russian', cal:145,p:5,  c:12, f:9,  unit:'g',  std:100},
+  {n:'Vinegret Salad',     cat:'Russian', cal:80, p:2,  c:13, f:2.5,unit:'g',  std:100},
+  {n:'Grechka + Chicken',  cat:'Russian', cal:200,p:20, c:20, f:5,  unit:'srv',std:1},
+  {n:'Shchi (cabbage soup)',cat:'Russian',cal:45, p:2,  c:6,  f:1.5,unit:'ml', std:100},
+  {n:'Okroshka',           cat:'Russian', cal:55, p:3,  c:5,  f:2,  unit:'ml', std:100},
+  {n:'Black Bread (rzh)',  cat:'Russian', cal:259,p:9,  c:50, f:3,  unit:'pc', std:30},
+  {n:'Vareniki (5 pcs)',   cat:'Russian', cal:240,p:8,  c:40, f:5,  unit:'srv',std:1},
+  // DRINKS
+  {n:'Chai (milk+sugar)',  cat:'Drink',   cal:45, p:1.5,c:7,  f:1.2,unit:'cup',std:1},
+  {n:'Coffee (black)',     cat:'Drink',   cal:2,  p:0.3,c:0,  f:0,  unit:'cup',std:1},
+  {n:'Lassi (sweet)',      cat:'Drink',   cal:150,p:5,  c:22, f:5,  unit:'glass',std:1},
+  {n:'Nimbu Pani',         cat:'Drink',   cal:30, p:0.2,c:7,  f:0,  unit:'glass',std:1},
+  {n:'Protein Shake',      cat:'Drink',   cal:160,p:25, c:8,  f:3,  unit:'srv', std:1},
+  // FRUITS
+  {n:'Banana',             cat:'Fruit',   cal:89, p:1.1,c:23, f:0.3,unit:'pc', std:120},
+  {n:'Apple',              cat:'Fruit',   cal:52, p:0.3,c:14, f:0.2,unit:'pc', std:180},
+  {n:'Mango',              cat:'Fruit',   cal:60, p:0.8,c:15, f:0.4,unit:'g',  std:100},
+  {n:'Orange',             cat:'Fruit',   cal:47, p:0.9,c:12, f:0.1,unit:'pc', std:130},
+  {n:'Grapes',             cat:'Fruit',   cal:69, p:0.7,c:18, f:0.2,unit:'g',  std:100},
+  {n:'Watermelon',         cat:'Fruit',   cal:30, p:0.6,c:7.6,f:0.2,unit:'g',  std:100},
+  // SNACKS
+  {n:'Peanuts (roasted)',  cat:'Snack',   cal:585,p:26, c:16, f:49, unit:'g',  std:30},
+  {n:'Peanut Butter',      cat:'Snack',   cal:588,p:25, c:20, f:50, unit:'g',  std:30},
+  {n:'Almonds',            cat:'Snack',   cal:579,p:21, c:22, f:50, unit:'g',  std:30},
+  // SWEETS
+  {n:'Gulab Jamun',        cat:'Sweet',   cal:175,p:3,  c:32, f:4.5,unit:'pc', std:60},
+  {n:'Rasgulla',           cat:'Sweet',   cal:107,p:2.5,c:22, f:1.5,unit:'pc', std:70},
+  {n:'Halwa (suji)',       cat:'Sweet',   cal:290,p:4,  c:44, f:11, unit:'g',  std:100},
+];
+
+// ═══════════════════════════════════════
+// LOCALSTORAGE
+// ═══════════════════════════════════════
+const LS={
+  g:(k,d)=>{try{const v=localStorage.getItem(k);return v!=null?JSON.parse(v):d}catch{return d}},
+  s:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+};
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let S={
+  tk:LS.g('wos_tk','void'), ak:LS.g('wos_ak','gold'),
+  tab:'home', dv:false, sel:null,
+  cy:new Date().getFullYear(), cm:new Date().getMonth(),
+  esec:null, woed:false,
+  pe:LS.g('wos_pe',false), ph_:LS.g('wos_ph_',''), pu:false,
+  pt:LS.g('wos_pt',DEF_PHYS), mt:LS.g('wos_mt',DEF_MENT), ft:LS.g('wos_ft',DEF_FAM),
+  c:LS.g('wos_c',{}), n:LS.g('wos_n',{}), ph:LS.g('wos_ph',{}),
+  wo:LS.g('wos_wo',DEF_WO), rw:LS.g('wos_rw',{}), ex:LS.g('wos_ex',{}),
+  xt:LS.g('wos_xt',{}), d:LS.g('wos_d',{}),
+  m:LS.g('wos_m',{}), w:LS.g('wos_w',{}), sl:LS.g('wos_sl',{}),
+  food:LS.g('wos_food',{}),
+  body:LS.g('wos_body',{h:170,cw:70,gw:65,wks:12,sex:'male',act:'moderate'}),
+  cfoods:LS.g('wos_cfoods',[]),
+  wgoal:LS.g('wos_wgoal',2.0),
+  slgoal:LS.g('wos_slgoal',8),
+  calgoal:LS.g('wos_calgoal',null),
+  wlog:LS.g('wos_wlog',[]),
+};
+function save(){
+  LS.s('wos_tk',S.tk);LS.s('wos_ak',S.ak);
+  LS.s('wos_pe',S.pe);LS.s('wos_ph_',S.ph_);
+  LS.s('wos_pt',S.pt);LS.s('wos_mt',S.mt);LS.s('wos_ft',S.ft);
+  LS.s('wos_c',S.c);LS.s('wos_n',S.n);LS.s('wos_ph',S.ph);
+  LS.s('wos_wo',S.wo);LS.s('wos_rw',S.rw);LS.s('wos_ex',S.ex);
+  LS.s('wos_xt',S.xt);LS.s('wos_d',S.d);
+  LS.s('wos_m',S.m);LS.s('wos_w',S.w);LS.s('wos_sl',S.sl);
+  LS.s('wos_food',S.food);LS.s('wos_body',S.body);LS.s('wos_cfoods',S.cfoods);
+  LS.s('wos_wgoal',S.wgoal);LS.s('wos_slgoal',S.slgoal);
+  LS.s('wos_calgoal',S.calgoal);LS.s('wos_wlog',S.wlog);
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+const today=()=>new Date().toISOString().slice(0,10);
+const dkey=(y,m,d)=>`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+const allT=()=>[...S.pt,...S.mt,...S.ft];
+function eff(date,st=S){
+  const ch=st.c[date]||{},all=allT();
+  if(!all.length)return 0;
+  return Math.round(all.filter(t=>ch[t.id]).length/all.length*100);
+}
+function streak(st=S){
+  let s=0;const d=new Date();
+  for(let i=0;i<366;i++){
+    const k=d.toISOString().slice(0,10);
+    if(eff(k,st)>0)s++;else if(k!==today())break;
+    d.setDate(d.getDate()-1);
+  }
+  return s;
+}
+const last=n=>Array.from({length:n},(_,i)=>{const d=new Date();d.setDate(d.getDate()-(n-1-i));return d.toISOString().slice(0,10)});
+const T=()=>THEMES[S.tk]||THEMES.void;
+const A=()=>ACCENTS[S.ak]||ACCENTS.gold;
+const MC=id=>MOODS.find(m=>m.id===id);
+const hp=p=>{let h=5381;for(let i=0;i<p.length;i++)h=((h<<5)+h)+p.charCodeAt(i);return h.toString(36)};
+const wGoalL=()=>S.wgoal||2.0;
+const wDrops=()=>Math.round(wGoalL()*4);
+const wLabel=v=>{const ml=v*250;return ml>=1000?(ml/1000).toFixed(1)+'L':ml+'ml'};
+const wPct=v=>Math.min(100,Math.round(v/wDrops()*100));
+function hmColor(p){
+  const dk=T().d;
+  if(!p)return dk?'#ffffff05':'#00000008';
+  if(p<25)return dk?'#1a2a1a':'#c8f0d0';
+  if(p<75)return dk?'#1a4a20':'#6dba8a55';
+  return dk?'#1e5a22':'#6dba8a';
+}
+function unlocked(){return ACH.filter(a=>{try{return a.f(S)}catch{return false}})}
+
+// ═══════════════════════════════════════
+// BODY CALC
+// ═══════════════════════════════════════
+function calcBMR(b){
+  const base=10*(b.cw||70)+6.25*(b.h||170)-5*22;
+  return Math.round(b.sex==='female'?base-161:base+5);
+}
+function calcTDEE(b){return Math.round(calcBMR(b)*(ACT_MUL[b.act]||1.55))}
+function calcBodyGoals(b){
+  const tdee=calcTDEE(b),bmr=calcBMR(b);
+  const diff=(b.cw||70)-(b.gw||65);
+  const dailyDef=diff!==0?Math.round(diff*7700/((b.wks||12)*7)):0;
+  const targetCal=Math.max(1200,tdee-dailyDef);
+  const weeklyChange=Math.abs(dailyDef*7/7700).toFixed(2);
+  const bmi=+((b.cw||70)/(((b.h||170)/100)**2)).toFixed(1);
+  const bmiCat=bmi<18.5?'Underweight':bmi<25?'Normal':bmi<30?'Overweight':'Obese';
+  return{tdee,bmr,targetCal,dailyDef,weeklyChange,bmi,bmiCat,diff};
+}
+function getGoals(){
+  const cal=S.calgoal||(S.body?.cw&&S.body?.h?Math.max(1200,calcBodyGoals(S.body).targetCal):2000);
+  const cw=S.body?.cw||70;
+  const p=Math.round(cw*1.8);
+  return{cal,p,c:Math.round(cal*0.45/4),f:Math.round(cal*0.25/9)};
+}
+
+// ═══════════════════════════════════════
+// THEME
+// ═══════════════════════════════════════
+function applyTheme(){
+  const th=T(),ac=A(),r=document.documentElement.style;
+  r.setProperty('--bg',th.bg);r.setProperty('--p2',th.p2);r.setProperty('--p3',th.p3);
+  r.setProperty('--ln',th.ln);r.setProperty('--l2',th.l2);
+  r.setProperty('--t',th.t);r.setProperty('--t2',th.t2);r.setProperty('--t3',th.t3);
+  r.setProperty('--ac',ac.p);r.setProperty('--ac2',ac.g2);
+  if(th.glass){document.body.classList.add('glass-body','glass-mode');document.body.style.background=''}
+  else{document.body.classList.remove('glass-body','glass-mode');document.body.style.background=th.bg}
+  Chart.defaults.color=th.t2;Chart.defaults.borderColor=th.ln;
+}
+
+// ═══════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════
+let charts={};
+function killCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch{}});charts={}}
+function render(){
+  if(S.pe&&!S.pu){renderPin();return}
+  killCharts();applyTheme();updateNav();updateTopBar();
+  document.getElementById('content').innerHTML=`<div class="tab-r">${buildTab()}</div>`;
+  requestAnimationFrame(()=>{initReveal();buildCharts();if(S.tab==='home')doScoreAnim()});
+}
+// SETTINGS-ONLY re-render that preserves scroll position
+function reRenderSettings(){
+  const sc=document.getElementById('scroll');
+  const top=sc?sc.scrollTop:0;
+  killCharts();applyTheme();updateTopBar();
+  document.getElementById('content').innerHTML=`<div>${buildTab()}</div>`;
+  requestAnimationFrame(()=>{initReveal();if(sc)sc.scrollTop=top});
+}
+function updateNav(){
+  document.querySelectorAll('.nb').forEach(b=>b.classList.toggle('on',b.dataset.tab===S.tab));
+}
+function updateTopBar(){
+  const e=eff(today()),ac=A();
+  document.getElementById('date-chip').textContent=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+  const ring=document.getElementById('tr-ring');
+  if(ring){ring.style.stroke=ac.p;ring.setAttribute('stroke-dasharray',`${e/100*87.9} 87.9`)}
+  const pct=document.getElementById('tr-pct');if(pct)pct.textContent=e+'%';
+}
+function buildTab(){
+  if(S.tab==='calendar')return S.dv?buildDay():buildCal();
+  if(S.tab==='food')return buildFood();
+  if(S.tab==='analytics')return buildAnalytics();
+  if(S.tab==='settings')return buildSettings();
+  return buildHome();
+}
+function doScoreAnim(){
+  const el=document.getElementById('score-num');if(!el)return;
+  const target=parseInt(el.dataset.t||0);let cur=0;
+  el.classList.add('npop');
+  const step=()=>{cur=Math.min(cur+Math.max(1,Math.ceil(target/24)),target);el.textContent=cur;if(cur<target)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+function initReveal(){
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach((e,i)=>{if(e.isIntersecting){setTimeout(()=>e.target.classList.add('shown'),i*30);io.unobserve(e.target)}});
+  },{threshold:.05});
+  document.querySelectorAll('.rev').forEach(el=>io.observe(el));
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function buildHome(){
+  const td=today(),ch=S.c[td]||{};
+  const all=allT(),done=all.filter(t=>ch[t.id]).length;
+  const score=all.length?Math.round(done/all.length*100):0;
+  const mood=S.m[td],water=S.w[td]||0,sl=S.sl[td];
+  const drops=wDrops();
+  const taskSc=score,waterSc=wPct(water);
+  const moodMap={awful:0,bad:25,meh:50,good:75,great:100};
+  const moodSc=mood?(moodMap[mood]||50):50;
+  const sleepSc=sl?.h?Math.min(100,Math.round(sl.h/(S.slgoal||8)*100)):50;
+  const bb=Math.round(taskSc*.3+waterSc*.25+moodSc*.25+sleepSc*.2);
+  const bbCol=bb>=75?'var(--green)':bb>=45?'var(--ac)':'var(--red)';
+  const bbLbl=bb>=80?'Fully Charged ⚡':bb>=60?'Good Energy 🔆':bb>=40?'Getting Low 🌥':'Low Battery 🪫';
+  const secs=[
+    {l:'Physical',c:'var(--ac)',   tasks:S.pt},
+    {l:'Mental',  c:'var(--blue)', tasks:S.mt},
+    {l:'Family',  c:'var(--green)',tasks:S.ft},
+  ];
+  const ach=unlocked();
+  return `
+  <div style="padding:22px 18px 16px">
+    <div class="lbl" style="margin-bottom:6px">Today · ${new Date().toLocaleDateString('en-IN',{weekday:'long'})}</div>
+    <div style="font-family:'Fraunces',serif;font-size:90px;font-weight:300;font-style:italic;letter-spacing:-4px;line-height:.9;color:var(--ac)" id="score-num" data-t="${score}">0</div>
+    <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-top:6px">${score===100?'Perfect Day ⭐':score>=70?'On Fire 🔥':score>=40?'Keep Going 💪':'Just Start 🌱'}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+      ${mood?`<div style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid var(--ac)40;color:var(--ac);background:var(--ac)0d">${MC(mood).e} ${MC(mood).l}</div>`:''}
+      <div style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid ${water>=drops?'var(--blue)40':'var(--l2)'};color:${water>=drops?'var(--blue)':'var(--t3)'};background:${water>=drops?'#7ab3e80d':'transparent'}">💧 ${wLabel(water)}${water>=drops?' ✦':''}</div>
+      <div style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid ${sl?.h?'var(--purple)40':'var(--l2)'};color:${sl?.h?'var(--purple)':'var(--t3)'};background:${sl?.h?'#b48ae80d':'transparent'}">🌙 ${sl?.h?sl.h+'h':'—'}</div>
+      <div style="font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;border:1px solid ${bb>=60?bbCol+'40':'var(--l2)'};color:${bb>=60?bbCol:'var(--t3)'}">${bb} Battery</div>
+    </div>
+  </div>
+
+  <!-- MOOD -->
+  <div class="card rev" id="card-mood">
+    <div class="card-head"><div class="lbl" style="color:var(--purple)">Mood</div>${mood?`<span style="font-size:20px">${MC(mood).e}</span>`:''}</div>
+    <div class="mrow">
+      ${MOODS.map(m=>`<button class="mbtn${mood===m.id?' on':''}" onclick="setMood('${td}','${m.id}')">
+        <span class="memi">${m.e}</span><span class="mlbl">${m.l}</span>
+      </button>`).join('')}
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- WATER -->
+  <div class="card rev" id="card-water">
+    <div class="card-head">
+      <div>
+        <div class="lbl" style="color:var(--blue)">Water</div>
+        <div style="font-size:12px;font-weight:700;margin-top:2px;color:${water>=drops?'var(--blue)':'var(--t2)'}">${wLabel(water)} / ${wGoalL()}L ${water>=drops?'✦ Goal!':''}</div>
+      </div>
+      <button onclick="showWaterModal()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px">⚙ Goal</button>
+    </div>
+    <div style="padding:6px 14px 12px">
+      <div class="wdrops">
+        ${Array.from({length:drops},(_,i)=>`<div class="wdrop" onclick="setWater('${td}',${i+1})">
+          <svg viewBox="0 0 32 40" fill="none"><path d="M16 3C16 3 4 17 4 25a12 12 0 0024 0C28 17 16 3 16 3z" fill="${i<water?'#7ab3e8':'var(--l2)'}" stroke="${i<water?'#5090c8':'var(--ln)'}" stroke-width=".5"/>${i<water?'<path d="M11 26C12 22 14 21 16 22" stroke="#b0d8f8" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>':''}</svg>
+        </div>`).join('')}
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button onclick="setWater('${td}',Math.max(0,${water}-1))" class="btn btn-ghost" style="padding:5px 22px;font-size:18px">−</button>
+        <button onclick="setWater('${td}',Math.min(${drops},${water+1}))" class="btn btn-ac" style="padding:5px 22px;font-size:18px">+</button>
+      </div>
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- SLEEP -->
+  <div class="card rev" id="card-sleep">
+    <div class="card-head">
+      <div>
+        <div class="lbl" style="color:var(--purple)">Sleep</div>
+        ${sl?.h?`<div style="font-size:12px;font-weight:700;margin-top:2px;color:var(--t2)">${sl.h}h ${sl.q?'· '+sl.q:''}</div>`:''}
+      </div>
+      <button onclick="showSleepModal()" class="btn btn-ghost" style="font-size:10px;padding:4px 10px">Goal: ${S.slgoal}h</button>
+    </div>
+    <div style="padding:10px 14px 6px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="range" min="0" max="12" step=".5" value="${sl?.h||7}" oninput="onSleepSlide(this,'${td}','sln')" style="flex:1;accent-color:var(--ac)"/>
+        <div id="sln" style="font-family:'Fraunces',serif;font-size:22px;font-style:italic;color:var(--ac);min-width:36px;text-align:right">${sl?.h||7}</div>
+      </div>
+    </div>
+    <div class="sqrow">
+      ${SQ.map(q=>`<button class="sqbtn${sl?.q===q?' on':''}" onclick="setSleepQ('${td}','${q}')">${q}</button>`).join('')}
+    </div>
+  </div>
+  <div class="g12"></div>
+
+  <!-- BODY BATTERY -->
+  <div class="card rev">
+    <div class="card-head">
+      <div>
+        <div class="lbl">Body Battery</div>
+        <div style="font-size:11px;font-weight:700;margin-top:2px;color:${bbCol}">${bbLbl}</div>
+      </div>
+      <div style="font-family:'Fraunces',serif;font-size:52px;font-weight:300;font-style:italic;color:${bbCol};line-height:1">${bb}</div>
+    </div>
+    <div style="padding:0 14px 14px">
+      <div class="bbbar"><div class="bbfill" style="width:${bb}%;background:${bbCol}"></div></div>
+      <div class="bbgrid">
+        ${[['Tasks',taskSc,'var(--ac)'],['Water',waterSc,'var(--blue)'],['Mood',moodSc,'var(--purple)'],['Sleep',sleepSc,'var(--green)']].map(([l,v,c])=>`
+        <div class="bbtile">
+          <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:${c};line-height:1">${v}</div>
+          <div style="font-size:7px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--t3);margin-top:2px">${l}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- BREATHING -->
+  <div class="card rev">
+    <div class="card-head">
+      <div>
+        <div class="lbl">Breathe</div>
+        <div id="bm-title" style="font-size:11px;font-weight:700;margin-top:2px;color:var(--t3)">4-7-8 Relaxation</div>
+      </div>
+      <button id="br-btn" onclick="toggleBreath()" class="btn btn-ac" style="font-size:11px;padding:6px 14px">Start</button>
+    </div>
+    <div style="padding:8px 14px 16px">
+      <div style="display:flex;gap:5px;margin-bottom:12px">
+        ${[['478','4-7-8','Relax'],['box','Box','Focus'],['24','2-4','Quick']].map(([id,l,s])=>`
+        <button class="bmbtn${id==='478'?' on':''}" id="bm-${id}" onclick="setBreathMode('${id}')">
+          <div style="font-weight:800">${l}</div><div style="font-size:8px;opacity:.7;margin-top:1px">${s}</div>
+        </button>`).join('')}
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:10px">
+        <div style="position:relative;width:100px;height:100px">
+          <svg width="100" height="100" style="position:absolute;inset:0;transform:rotate(-90deg)">
+            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--ln)" stroke-width="3"/>
+            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--ac)" stroke-width="3.5"
+              stroke-dasharray="0 276" stroke-linecap="round" id="br-arc" style="transition:stroke-dasharray .9s linear"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+            <div id="br-phase" style="font-size:8px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--t3)">Ready</div>
+            <div id="br-count" style="font-family:'Fraunces',serif;font-size:30px;font-style:italic;color:var(--ac);line-height:1">—</div>
+          </div>
+        </div>
+      </div>
+      <div id="br-info" style="text-align:center;font-size:11px;color:var(--t3)">Tap Start to begin</div>
+    </div>
+  </div>
+  <div class="g12"></div>
+
+  <!-- TASK SECTIONS -->
+  ${secs.map((sec,si)=>{
+    const pct=sec.tasks.length?Math.round(sec.tasks.filter(t=>ch[t.id]).length/sec.tasks.length*100):0;
+    return `<div class="card rev" style="transition-delay:${si*50}ms">
+      <div class="card-head">
+        <div class="lbl" style="color:${sec.c}">${sec.l}</div>
+        <div style="font-size:11px;font-weight:700;color:${sec.c}">${sec.tasks.filter(t=>ch[t.id]).length}/${sec.tasks.length}</div>
+      </div>
+      <div class="card-prog"><div class="card-prog-fill" style="width:${pct}%;background:${sec.c}"></div></div>
+      ${sec.tasks.map(t=>`<div class="trow" onclick="toggleCheck('${td}','${t.id}')">
+        <div class="tcb${ch[t.id]?' on':''}">${ch[t.id]?'✓':''}</div>
+        <span class="tico">${t.i}</span>
+        <span class="tlbl${ch[t.id]?' done':''}">${t.l}</span>
+      </div>`).join('')}
+    </div><div class="g8"></div>`;
+  }).join('')}
+
+  ${ach.length?`<div class="card rev">
+    <div class="card-head"><div class="lbl" style="color:var(--ac)">Achievements</div><span style="font-size:11px;color:var(--t3)">${ach.length}/${ACH.length}</span></div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;padding:12px 14px">
+      ${ach.map(a=>`<div style="display:flex;align-items:center;gap:6px;background:var(--p3);border:1px solid var(--ln);border-radius:var(--r8);padding:6px 10px">
+        <span style="font-size:17px">${a.e}</span>
+        <div><div style="font-size:11px;font-weight:700">${a.n}</div><div style="font-size:9px;color:var(--t3)">${a.d}</div></div>
+      </div>`).join('')}
+    </div>
+  </div>`:''}
+  <div class="g16"></div>`;
+}
+
+// ═══════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════
+function buildCal(){
+  const y=S.cy,m=S.cm,td=today();
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  return `
+  <div style="padding:14px 14px 0">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button class="btn btn-ghost" style="padding:6px 14px;font-size:20px" onclick="prevMonth()">‹</button>
+      <div style="font-family:'Fraunces',serif;font-size:22px;font-style:italic">${MONTHS[m]} ${y}</div>
+      <button class="btn btn-ghost" style="padding:6px 14px;font-size:20px" onclick="nextMonth()">›</button>
+    </div>
+    <div class="cgrid">
+      ${DAYS.map(d=>`<div class="chd">${d}</div>`).join('')}
+      ${Array(first).fill('<div></div>').join('')}
+      ${Array.from({length:days},(_,i)=>{
+        const day=i+1,dk=dkey(y,m,day),e=eff(dk);
+        const isToday=dk===td,isSel=dk===S.sel;
+        return `<div class="cday${isToday?' today':''}${isSel?' sel':''}" onclick="selDate('${dk}')" style="${!isSel&&e>0?'background:'+hmColor(e):''}">
+          <div class="cdn">${day}</div>
+          ${e>0&&!isSel?`<div class="cdot" style="background:${e===100?'var(--ac)':'var(--green)'}"></div>`:''}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  <div class="chartcard rev">
+    <div class="chartcard-head"><span class="lbl">30-Day Trend</span></div>
+    <div class="chartcard-body"><canvas id="trendChart" height="85"></canvas></div>
+  </div>
+  <div class="g16"></div>`;
+}
+
+// ═══════════════════════════════════════
+// DAY VIEW
+// ═══════════════════════════════════════
+function buildDay(){
+  const dk=S.sel,ch=S.c[dk]||{};
+  const mood=S.m[dk],water=S.w[dk]||0,sl=S.sl[dk];
+  const drops=wDrops();
+  const all=allT(),done=all.filter(t=>ch[t.id]).length;
+  const score=all.length?Math.round(done/all.length*100):0;
+  const dateObj=new Date(dk+'T12:00:00');
+  const wo=S.wo[dateObj.getDay()]||[];
+  const extras=S.xt[dk]||[];
+  const note=S.n[dk]||'';
+  const secs=[
+    {l:'Physical',c:'var(--ac)',  tasks:S.pt},
+    {l:'Mental',  c:'var(--blue)',tasks:S.mt},
+    {l:'Family',  c:'var(--green)',tasks:S.ft},
+  ];
+  return `
+  <div style="padding:14px 14px 0;display:flex;align-items:center;gap:10px">
+    <button class="btn btn-ghost" style="padding:6px 12px" onclick="backFromDay()">‹</button>
+    <div style="flex:1">
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-style:italic">${dateObj.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'})}</div>
+      <div style="font-size:11px;color:var(--t3);font-weight:700">${score}% · ${done}/${all.length}</div>
+    </div>
+    ${mood?`<span style="font-size:28px">${MC(mood).e}</span>`:''}
+  </div>
+  <div style="display:flex;gap:5px;padding:8px 14px">
+    ${water>0?`<div style="font-size:10px;padding:3px 9px;border-radius:6px;background:#7ab3e815;color:var(--blue);font-weight:700;border:1px solid #7ab3e830">💧 ${wLabel(water)}</div>`:''}
+    ${sl?.h?`<div style="font-size:10px;padding:3px 9px;border-radius:6px;background:#b48ae815;color:var(--purple);font-weight:700;border:1px solid #b48ae830">🌙 ${sl.h}h</div>`:''}
+  </div>
+  ${secs.map(sec=>`<div class="card rev" style="margin-bottom:8px">
+    <div class="card-head"><div class="lbl" style="color:${sec.c}">${sec.l}</div></div>
+    ${sec.tasks.map(t=>`<div class="trow" onclick="toggleCheck('${dk}','${t.id}')">
+      <div class="tcb${ch[t.id]?' on':''}">${ch[t.id]?'✓':''}</div>
+      <span class="tico">${t.i}</span>
+      <span class="tlbl${ch[t.id]?' done':''}">${t.l}</span>
+    </div>`).join('')}
+  </div>`).join('')}
+  <div class="card rev" style="margin-bottom:8px">
+    <div class="card-head"><div class="lbl" style="color:var(--blue)">Water · ${wLabel(water)}</div></div>
+    <div style="padding:6px 14px 12px">
+      <div class="wdrops">
+        ${Array.from({length:drops},(_,i)=>`<div class="wdrop" onclick="setWater('${dk}',${i+1})">
+          <svg viewBox="0 0 32 40" fill="none"><path d="M16 3C16 3 4 17 4 25a12 12 0 0024 0C28 17 16 3 16 3z" fill="${i<water?'#7ab3e8':'var(--l2)'}" stroke="${i<water?'#5090c8':'var(--ln)'}" stroke-width=".5"/></svg>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="card rev" style="margin-bottom:8px">
+    <div class="card-head">
+      <div class="lbl" style="color:var(--purple)">Sleep</div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-style:italic;color:var(--ac)" id="sln2">${sl?.h||7}h</div>
+    </div>
+    <div style="padding:8px 14px 6px">
+      <input type="range" min="0" max="12" step=".5" value="${sl?.h||7}" oninput="onSleepSlide(this,'${dk}','sln2')" style="width:100%;accent-color:var(--ac)"/>
+    </div>
+    <div class="sqrow">
+      ${SQ.map(q=>`<button class="sqbtn${sl?.q===q?' on':''}" onclick="setSleepQ('${dk}','${q}')">${q}</button>`).join('')}
+    </div>
+  </div>
+  <div class="card rev" style="margin-bottom:8px">
+    <div class="card-head">
+      <div class="lbl">Extra Tasks</div>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="addXtra('${dk}')">+ Add</button>
+    </div>
+    ${extras.length?extras.map((e,i)=>`<div class="trow" onclick="toggleXtra('${dk}',${i})">
+      <div class="tcb${e.done?' on':''}">${e.done?'✓':''}</div>
+      <span class="tlbl${e.done?' done':''}">${e.l}</span>
+      <button onclick="event.stopPropagation();delXtra('${dk}',${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;padding:0 6px">×</button>
+    </div>`).join(''):`<div style="padding:12px 14px;font-size:12px;color:var(--t3)">No extra tasks</div>`}
+  </div>
+  <div class="card rev" style="margin-bottom:8px">
+    <div class="card-head">
+      <div class="lbl">Workout</div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;${S.rw[dk]?'background:var(--green)15;border-color:var(--green)40;color:var(--green)':''}" onclick="toggleRew('${dk}')">Rest${S.rw[dk]?' ✓':''}</button>
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;${S.ex[dk]?'background:var(--ac)15;border-color:var(--ac)40;color:var(--ac)':''}" onclick="toggleEx('${dk}')">Done${S.ex[dk]?' ✓':''}</button>
+      </div>
+    </div>
+    ${wo.length?`<div style="padding:8px 14px 12px;display:flex;flex-wrap:wrap;gap:5px">${wo.map(e=>`<div style="padding:4px 10px;border:1px solid var(--l2);border-radius:6px;font-size:11px;font-weight:700;color:var(--t2)">${e}</div>`).join('')}</div>`:`<div style="padding:10px 14px;font-size:12px;color:var(--t3)">Rest day</div>`}
+  </div>
+  <div class="card rev" style="margin-bottom:8px">
+    <div class="card-head"><div class="lbl">Note</div></div>
+    <div style="padding:8px 13px 14px">
+      <textarea oninput="saveNote('${dk}',this.value)" placeholder="How was today…" style="width:100%;min-height:80px;background:transparent;border:none;outline:none;color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;resize:none;line-height:1.5">${note}</textarea>
+    </div>
+  </div>
+  <div class="g16"></div>`;
+}
+
+// ═══════════════════════════════════════
+// FOOD TAB
+// ═══════════════════════════════════════
+let fSearch='',fSuggs=[],fPending=null;
+function searchFood(q){
+  if(!q||q.length<2)return[];
+  const ql=q.toLowerCase();
+  const all=[...FOOD_DB,...(S.cfoods||[]).map(f=>({...f,cat:'Custom'}))];
+  return all.filter(f=>f.n.toLowerCase().includes(ql)||(f.cat||'').toLowerCase().includes(ql)).slice(0,14);
+}
+function getTodayFood(){return S.food[today()]||[]}
+function getFoodTotals(entries){return entries.reduce((a,e)=>({cal:a.cal+e.cal,p:a.p+e.p,c:a.c+e.c,f:a.f+e.f}),{cal:0,p:0,c:0,f:0})}
+function calcEntry(food,qty){
+  const m=(food.unit==='g'||food.unit==='ml')?qty/100:qty;
+  return{cal:Math.round(food.cal*m),p:+(food.p*m).toFixed(1),c:+(food.c*m).toFixed(1),f:+(food.f*m).toFixed(1)};
+}
+function buildFood(){
+  const td=today(),entries=getTodayFood(),tot=getFoodTotals(entries),G=getGoals();
+  const calPct=Math.min(100,Math.round(tot.cal/G.cal*100));
+  const calCol=tot.cal>G.cal*1.1?'var(--red)':tot.cal>G.cal*.85?'var(--green)':'var(--ac)';
+  const ring=(v,mx,col,r=18)=>{
+    const c=2*Math.PI*r,d=Math.min(v/mx,1)*c;
+    return `<svg width="${r*2+8}" height="${r*2+8}" viewBox="0 0 ${r*2+8} ${r*2+8}">
+      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="var(--ln)" stroke-width="3"/>
+      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="${col}" stroke-width="3"
+        stroke-dasharray="${d} ${c}" stroke-linecap="round" transform="rotate(-90 ${r+4} ${r+4})" style="transition:stroke-dasharray .8s var(--ease)"/>
+    </svg>`;
+  };
+  return `
+  <div style="padding:20px 18px 14px;border-bottom:1px solid var(--ln)">
+    <div class="lbl">Nutrition · Today</div>
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:5px">
+      <div>
+        <div style="font-family:'Fraunces',serif;font-size:52px;font-weight:300;font-style:italic;letter-spacing:-2px;line-height:1;color:${calCol}">${Math.round(tot.cal)}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+          <span style="font-size:11px;color:var(--t3);font-weight:700">kcal · goal <span style="color:var(--ac)">${G.cal}</span></span>
+          <button onclick="showCalModal()" class="btn btn-ghost" style="font-size:9px;padding:2px 8px">${S.calgoal?'Manual ✕':'⚙ Goal'}</button>
+        </div>
+      </div>
+      <div style="text-align:right;padding-bottom:3px">
+        <div style="font-family:'Fraunces',serif;font-size:28px;font-style:italic;color:${G.cal-Math.round(tot.cal)>=0?'var(--green)':'var(--red)'}">${Math.abs(G.cal-Math.round(tot.cal))}</div>
+        <div style="font-size:9px;color:var(--t3);font-weight:700">${G.cal-Math.round(tot.cal)>=0?'remaining':'over'}</div>
+      </div>
+    </div>
+    <div class="cmeter"><div class="cmfill" style="width:${calPct}%;background:${calCol}"></div></div>
+  </div>
+  <div style="border-bottom:1px solid var(--ln)">
+    <div class="mrings">
+      ${[{l:'Protein',v:Math.round(tot.p),g:G.p,c:'var(--red)'},{l:'Carbs',v:Math.round(tot.c),g:G.c,c:'var(--blue)'},{l:'Fat',v:Math.round(tot.f),g:G.f,c:'var(--purple)'},{l:'Cal',v:Math.round(tot.cal),g:G.cal,c:calCol}].map(m=>`<div class="mring-tile">
+        ${ring(m.v,m.g,m.c)}
+        <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;line-height:1;color:${m.c}">${m.v}</div>
+        <div style="font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--t3)">${m.l}</div>
+        <div style="font-size:8px;color:var(--t3)">/${m.g}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  <div style="padding:13px 14px 8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+      <div class="lbl">Log Food</div>
+      <button onclick="showAddCustomFood()" class="btn btn-ac" style="font-size:10px;padding:4px 12px">+ Custom</button>
+    </div>
+    <div style="position:relative">
+      <span style="position:absolute;top:50%;transform:translateY(-50%);left:12px;font-size:14px;pointer-events:none">🔍</span>
+      <input class="fsearch" id="finp" type="text" placeholder="aloo gobi, pelmeni, chicken…" value="${fSearch}"
+        oninput="onFoodInput(this.value)" onkeydown="onFoodKey(event)" autocomplete="off" spellcheck="false"/>
+    </div>
+    <div id="fsugg-box"></div>
+    <div style="font-size:10px;color:var(--t3);margin-top:6px">Try: "100g chicken" · "2 roti" · "borscht"</div>
+  </div>
+  ${S.cfoods?.length?`<div style="padding:4px 14px 4px"><div class="lbl" style="margin-bottom:7px">My Foods</div></div>
+  <div class="card" style="margin-bottom:8px">
+    ${S.cfoods.map((f,i)=>`<div class="trow" onclick="selectCF(${i})">
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">${f.n}</div><div style="font-size:10px;color:var(--t3)">P:${f.p} C:${f.c} F:${f.f} · per ${f.std}${f.unit}</div></div>
+      <div style="font-family:'Fraunces',serif;font-size:16px;font-style:italic;color:var(--ac);margin-right:7px">${f.cal}</div>
+      <button onclick="event.stopPropagation();delCF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;padding:0 5px">×</button>
+    </div>`).join('')}
+  </div>`:''}
+  <div style="padding:12px 14px 4px"><div class="lbl">Today's Log${entries.length?` · ${entries.length} items`:''}</div></div>
+  ${entries.length===0?`<div style="padding:20px 14px;text-align:center;font-size:13px;color:var(--t3)">Nothing logged yet 🍱</div>`:`
+  <div class="card" style="margin-bottom:8px">
+    ${entries.map((e,i)=>`<div class="flog-item">
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">${e.name}</div><div style="font-size:10px;color:var(--t3)">${e.qtyLabel} · P:${e.p}g C:${e.c}g F:${e.f}g</div></div>
+      <div style="font-family:'Fraunces',serif;font-size:17px;font-style:italic;color:var(--ac)">${e.cal}</div>
+      <button onclick="delFoodEntry('${td}',${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;padding:0 5px">×</button>
+    </div>`).join('')}
+    <div style="padding:9px 14px;border-top:1px solid var(--ln);display:flex;justify-content:space-between">
+      <span class="lbl">Total</span>
+      <span style="font-size:11px;color:var(--t2)">P:${Math.round(tot.p)}g C:${Math.round(tot.c)}g F:${Math.round(tot.f)}g</span>
+      <span style="font-family:'Fraunces',serif;font-size:17px;font-style:italic;color:var(--ac)">${Math.round(tot.cal)} kcal</span>
+    </div>
+  </div>`}
+  <div style="padding:8px 14px 4px"><div class="lbl">This Week</div></div>
+  <div class="chartcard rev"><div class="chartcard-body"><canvas id="foodChart" height="90"></canvas></div></div>
+  <div class="g16"></div>`;
+}
+
+// ═══════════════════════════════════════
+// ANALYTICS
+// ═══════════════════════════════════════
+function buildAnalytics(){
+  const l30=last(30),str=streak();
+  const avg=Math.round(l30.reduce((a,d)=>a+eff(d),0)/30);
+  const perfect=l30.filter(d=>eff(d)===100).length;
+  return `
+  <div style="padding:18px 14px 6px"><div class="lbl">Your Progress</div></div>
+  <div class="sgrid">
+    ${[{v:str,l:'Day Streak',e:'🔥'},{v:avg+'%',l:'30d Avg',e:'📊'},{v:perfect,l:'Perfect Days',e:'⭐'},{v:allT().length,l:'Total Tasks',e:'✓'}].map(s=>`
+    <div class="stile rev">
+      <div style="font-size:22px;margin-bottom:4px">${s.e}</div>
+      <div class="sval">${s.v}</div>
+      <div class="slbl">${s.l}</div>
+    </div>`).join('')}
+  </div>
+  <div class="chartcard rev">
+    <div class="chartcard-head"><span class="lbl">30-Day Score</span></div>
+    <div class="chartcard-body"><canvas id="scoreChart" height="90"></canvas></div>
+  </div>
+  <div class="g8"></div>
+  <div class="chartcard rev">
+    <div class="chartcard-head"><span class="lbl">Mood Trend</span></div>
+    <div class="chartcard-body"><canvas id="moodChart" height="75"></canvas></div>
+  </div>
+  <div class="g8"></div>
+  <div style="padding:8px 14px 0;display:flex;align-items:center;justify-content:space-between">
+    <div class="lbl">Weight Log</div>
+    <button onclick="showWeightModal()" class="btn btn-ac" style="font-size:10px;padding:4px 12px">+ Log</button>
+  </div>
+  ${S.wlog?.length?`
+  <div class="chartcard rev" style="margin-top:8px">
+    <div class="chartcard-body"><canvas id="weightChart" height="90"></canvas></div>
+  </div>
+  <div class="g8"></div>
+  <div class="card">
+    ${[...S.wlog].reverse().slice(0,10).map((e,i)=>`<div class="wlrow">
+      <span style="font-size:11px;color:var(--t3)">${e.date}</span>
+      <span style="font-family:'Fraunces',serif;font-size:22px;font-style:italic;color:var(--ac)">${e.kg} kg</span>
+      <button onclick="delWeight(${S.wlog.length-1-i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:18px;padding:0 4px">×</button>
+    </div>`).join('')}
+  </div>`:`<div style="padding:12px 14px;font-size:12px;color:var(--t3)">No weight entries yet</div>`}
+  <div class="g16"></div>`;
+}
+
+// ═══════════════════════════════════════
+// SETTINGS — NO SCROLL JUMP ON BODY INPUT
+// ═══════════════════════════════════════
+function buildSettings(){
+  const b=S.body||{};
+  const secs=[{l:'Physical',tasks:S.pt,key:'pt',c:'var(--red)',sec:'ph'},{l:'Mental',tasks:S.mt,key:'mt',c:'var(--purple)',sec:'me'},{l:'Family',tasks:S.ft,key:'ft',c:'var(--green)',sec:'fa'}];
+  return `
+  <div style="padding:18px 14px 6px"><div class="lbl">Configuration</div></div>
+
+  <!-- APPEARANCE -->
+  <div style="padding:0 14px"><span class="ss-lbl">Theme</span></div>
+  <div class="ss-card">
+    <div style="padding:13px 14px">
+      <div class="lbl" style="margin-bottom:9px">Dark</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
+        ${Object.entries(THEMES).filter(([,t])=>t.d).map(([k,t])=>`<button class="tsw${S.tk===k?' on':''}" onclick="setTheme('${k}')" title="${t.n}" style="background:${t.bg}"><div style="position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,${t.p2},${t.bg})"></div>${S.tk===k?'<div style="position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px">✓</div>':''}</button>`).join('')}
+      </div>
+      <div class="lbl" style="margin-bottom:9px">Light</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${Object.entries(THEMES).filter(([,t])=>!t.d).map(([k,t])=>`<button class="tsw${S.tk===k?' on':''}" onclick="setTheme('${k}')" title="${t.n}" style="background:${t.glass?'linear-gradient(135deg,#e0ecff,#f0e0ff)':t.bg}"><div style="position:absolute;inset:0;border-radius:50%;background:${t.glass?'linear-gradient(135deg,rgba(255,255,255,.8),rgba(220,200,255,.4))':'linear-gradient(135deg,'+t.p2+','+t.bg+')'}"></div>${S.tk===k?`<div style="position:absolute;inset:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:${t.t}">✓</div>`:''}</button>`).join('')}
+      </div>
+    </div>
+  </div>
+  <div class="g8"></div>
+  <div style="padding:0 14px"><span class="ss-lbl">Accent</span></div>
+  <div class="ss-card">
+    <div style="padding:13px 14px;display:flex;gap:10px;flex-wrap:wrap">
+      ${Object.entries(ACCENTS).map(([k,a])=>`<div class="asw${S.ak===k?' on':''}" onclick="setAccent('${k}')" style="background:${a.p}" title="${a.n}"></div>`).join('')}
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- BODY GOALS -->
+  <div style="padding:0 14px"><span class="ss-lbl">Body & Goals</span></div>
+  <div class="ss-card">
+    <div style="padding:13px 14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
+        ${[{k:'h',l:'Height cm',ph:'170'},{k:'cw',l:'Current kg',ph:'70'},{k:'gw',l:'Goal kg',ph:'65'},{k:'wks',l:'Weeks',ph:'12'}].map(f=>`<div>
+          <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:4px">${f.l}</div>
+          <input type="number" placeholder="${f.ph}" value="${b[f.k]||''}" class="binp"
+            oninput="updateBodyField('${f.k}',this.value)"/>
+        </div>`).join('')}
+      </div>
+      <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:7px">Sex</div>
+      <div style="display:flex;gap:6px;margin-bottom:11px">
+        ${[['male','♂ Male'],['female','♀ Female']].map(([v,l])=>`<button onclick="updateBodySel('sex','${v}')" class="btn ${b.sex===v?'btn-ac':'btn-ghost'}" style="flex:1;font-size:12px">${l}</button>`).join('')}
+      </div>
+      <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:7px">Activity</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:13px">
+        ${[['sedentary','🪑 Sedentary','Desk'],['light','🚶 Light','1-2x/wk'],['moderate','🏃 Moderate','3-5x/wk'],['active','💪 Active','6-7x/wk'],['athlete','⚡ Athlete','2x/day']].map(([v,l,s])=>`
+        <button onclick="updateBodySel('act','${v}')" style="padding:8px;border-radius:var(--r8);border:1px solid ${b.act===v?'var(--ac)':'var(--l2)'};background:${b.act===v?'var(--ac)15':'transparent'};cursor:pointer;text-align:left;font-family:'Cabinet Grotesk',sans-serif">
+          <div style="font-size:12px;font-weight:700;color:${b.act===v?'var(--ac)':'var(--t)'}">${l}</div>
+          <div style="font-size:9px;color:var(--t3)">${s}</div>
+        </button>`).join('')}
+      </div>
+      <div id="body-results">
+        ${buildBodyResults(b)}
+      </div>
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- WORKOUT -->
+  <div style="padding:0 14px"><span class="ss-lbl">Workout Plan</span></div>
+  <div class="ss-card">
+    <div class="ss-row">
+      <span style="font-size:13px;font-weight:700">Weekly Schedule</span>
+      <button onclick="toggleWoEd()" class="btn btn-ghost" style="font-size:11px">${S.woed?'Done':'Edit'}</button>
+    </div>
+    ${S.woed?`<div style="padding:0 14px 12px">${DAYS.map((day,i)=>`<div style="margin-bottom:10px">
+      <div class="lbl" style="margin-bottom:5px;color:var(--ac)">${day}</div>
+      ${(S.wo[i]||[]).map((ex,j)=>`<div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+        <span style="flex:1;font-size:12px;background:#ffffff06;padding:6px 10px;border-radius:var(--r8);border:1px solid var(--l2);color:var(--t2)">${ex}</span>
+        <button onclick="rmExercise(${i},${j})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px">×</button>
+      </div>`).join('')}
+      <button class="btn btn-ghost" style="width:100%;font-size:11px;margin-top:2px" onclick="addExercise(${i})">+ Add</button>
+    </div>`).join('')}</div>`:`<div style="padding:4px 14px 12px;display:flex;flex-wrap:wrap;gap:4px">
+      ${DAYS.map((d,i)=>`<div style="font-size:10px;padding:3px 9px;border-radius:99px;background:#ffffff06;border:1px solid var(--l2);color:var(--t3);font-weight:600">${d}: ${(S.wo[i]||[]).length||'Rest'}</div>`).join('')}
+    </div>`}
+  </div>
+  <div class="g8"></div>
+
+  <!-- TASKS -->
+  <div style="padding:0 14px"><span class="ss-lbl">Tasks</span></div>
+  ${secs.map(sec=>`<div class="ss-card" style="margin-bottom:8px">
+    <div class="ss-row">
+      <div class="lbl" style="color:${sec.c}">${sec.l}</div>
+      <div style="display:flex;gap:5px">
+        <button class="btn btn-ghost" style="font-size:10px;padding:4px 9px" onclick="toggleESec('${sec.sec}')">${S.esec===sec.sec?'Done':'Edit'}</button>
+        <button class="btn btn-ac" style="font-size:10px;padding:4px 9px" onclick="addTask('${sec.sec}')">+ Add</button>
+      </div>
+    </div>
+    ${sec.tasks.map(t=>`<div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-top:1px solid var(--ln)">
+      <span style="font-size:14px">${t.i}</span>
+      <span style="flex:1;font-size:12px;font-weight:700;color:var(--t2)">${t.l}</span>
+      ${S.esec===sec.sec?`<button onclick="delTask('${sec.key}','${t.id}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px">×</button>`:''}
+    </div>`).join('')}
+  </div>`).join('')}
+  <div class="g8"></div>
+
+  <!-- PIN -->
+  <div style="padding:0 14px"><span class="ss-lbl">Security</span></div>
+  <div class="ss-card">
+    <div class="ss-row">
+      <span style="font-size:13px;font-weight:700">PIN Lock <span style="font-size:10px;color:${S.pe?'var(--ac)':'var(--t3)'}">${S.pe?'● ON':'○ OFF'}</span></span>
+      ${S.pe?`<button class="btn btn-red" style="font-size:11px" onclick="disablePin()">Disable</button>`:`<button class="btn btn-ghost" style="font-size:11px" onclick="showSetPin()">Set PIN</button>`}
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- DATA -->
+  <div style="padding:0 14px"><span class="ss-lbl">Data</span></div>
+  <div class="ss-card">
+    <div style="padding:13px;display:flex;flex-direction:column;gap:7px">
+      <button class="btn btn-ac btn-full" onclick="exportData()">⬇ Export Backup</button>
+      <label class="btn btn-ghost btn-full" style="cursor:pointer">⬆ Import Backup<input type="file" accept=".json" style="display:none" onchange="importData(event)"/></label>
+      <button class="btn btn-full" style="background:var(--ac)12;color:var(--ac);border-color:var(--ac)28" onclick="showReport()">◈ Monthly Report</button>
+    </div>
+  </div>
+  <div class="g8"></div>
+
+  <!-- DANGER -->
+  <div style="padding:0 14px">
+    <div class="ss-card" style="border-color:var(--red)25">
+      <div style="padding:13px">
+        <div style="font-size:9px;font-weight:800;color:var(--red);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase">Danger Zone</div>
+        <button class="btn btn-red btn-full" onclick="resetToday()">Reset Today's Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:24px 14px;text-align:center">
+    <div style="font-family:'Fraunces',serif;font-size:24px;font-style:italic;color:var(--ac);margin-bottom:5px">W·OS</div>
+    <div style="font-size:10px;font-weight:700;color:var(--t3);line-height:1.8">Made with ❤️ by <span style="color:var(--t2)">Anant Raj Saini</span><br/>Powered by <span style="color:var(--t2)">Claude AI</span></div>
+  </div>`;
+}
+
+function buildBodyResults(b){
+  if(!b.cw||!b.h||!b.gw||!b.wks)
+    return `<div style="padding:10px;background:#ffffff05;border-radius:var(--r8);text-align:center;font-size:12px;color:var(--t3)">Fill fields above to see your plan ↑</div>`;
+  const r=calcBodyGoals(b);
+  const dir=r.diff>0?'Cut 🔻':r.diff<0?'Bulk 📈':'Maintain ⚖️';
+  const dc=r.diff>0?'var(--red)':'var(--green)';
+  return `<div style="background:#ffffff06;border:1px solid var(--l2);border-radius:var(--r12);padding:11px">
+    <div style="font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-bottom:8px">Plan · ${dir}</div>
+    ${[['BMR',r.bmr+' kcal','var(--t2)'],['TDEE',r.tdee+' kcal','var(--t2)'],['Target',r.targetCal+' kcal','var(--ac)'],['Daily Δ',(r.diff>0?'-':'+')+Math.abs(r.dailyDef)+' kcal',dc],['Weekly Δ',r.weeklyChange+' kg/wk',dc],['BMI',r.bmi+' · '+r.bmiCat,r.bmiCat==='Normal'?'var(--green)':'var(--ac)']].map(([k,v,c])=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-top:1px solid var(--ln)">
+      <span style="font-size:11px;color:var(--t3)">${k}</span>
+      <span style="font-family:'Fraunces',serif;font-size:16px;font-style:italic;color:${c}">${v}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+// KEY FIX: update body field WITHOUT full re-render — only update results panel
+function updateBodyField(key,val){
+  S.body=S.body||{};
+  S.body[key]=parseFloat(val)||0;
+  save();
+  const panel=document.getElementById('body-results');
+  if(panel)panel.innerHTML=buildBodyResults(S.body);
+}
+// Button selections (sex/act) — save scroll and re-render settings only
+function updateBodySel(key,val){
+  S.body=S.body||{};
+  S.body[key]=val;
+  save();
+  reRenderSettings();
+}
+
+// ═══════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════
+function buildCharts(){
+  const th=T(),ac=A();
+  const xOpts={ticks:{font:{size:8,family:'Cabinet Grotesk'},color:th.t3},grid:{color:th.ln}};
+  const yOpts={ticks:{font:{size:8,family:'Cabinet Grotesk'},color:th.t3},grid:{color:th.ln}};
+  if(S.tab==='analytics'){
+    const l30=last(30);
+    const sc=document.getElementById('scoreChart');
+    if(sc){charts.score=new Chart(sc,{type:'line',data:{labels:l30.map(d=>d.slice(5)),datasets:[{data:l30.map(d=>eff(d)),borderColor:ac.p,backgroundColor:ac.p+'18',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:xOpts,y:{...yOpts,min:0,max:100}}}})}
+    const mc=document.getElementById('moodChart');
+    const mv={awful:1,bad:2,meh:3,good:4,great:5};
+    if(mc){charts.mood=new Chart(mc,{type:'line',data:{labels:l30.map(d=>d.slice(5)),datasets:[{data:l30.map(d=>mv[S.m[d]]||null),borderColor:'#b48ae8',backgroundColor:'#b48ae820',fill:true,tension:.4,pointRadius:0,borderWidth:2,spanGaps:true}]},options:{plugins:{legend:{display:false}},scales:{x:xOpts,y:{min:1,max:5,ticks:{font:{size:8},color:th.t3,callback:v=>['','😞','😕','😐','🙂','😄'][v]||''},grid:{color:th.ln}}}}})}
+    if(S.wlog?.length>=2){
+      const wc=document.getElementById('weightChart');
+      const wl=S.wlog.slice(-20);
+      if(wc){charts.weight=new Chart(wc,{type:'line',data:{labels:wl.map(e=>e.date.slice(5)),datasets:[{data:wl.map(e=>e.kg),borderColor:'#6dba8a',backgroundColor:'#6dba8a18',fill:true,tension:.4,pointRadius:3,borderWidth:2}]},options:{plugins:{legend:{display:false}},scales:{x:xOpts,y:yOpts}}})}
+    }
+  }
+  if(S.tab==='calendar'){
+    const tc=document.getElementById('trendChart');
+    const l30=last(30);
+    if(tc){charts.trend=new Chart(tc,{type:'bar',data:{labels:l30.map(d=>d.slice(8)),datasets:[{data:l30.map(d=>eff(d)),backgroundColor:l30.map(d=>eff(d)===100?ac.p:eff(d)>0?ac.p+'60':th.l2),borderRadius:3,borderSkipped:false}]},options:{plugins:{legend:{display:false}},scales:{x:{...xOpts,grid:{display:false}},y:{...yOpts,min:0,max:100}}}})}
+  }
+  if(S.tab==='food'){
+    const fc=document.getElementById('foodChart');
+    const l7=last(7),G=getGoals();
+    if(fc){charts.food=new Chart(fc,{type:'bar',data:{labels:l7.map(d=>DAYS[new Date(d+'T12:00').getDay()]),datasets:[{data:l7.map(d=>(S.food[d]||[]).reduce((a,e)=>a+e.cal,0)),backgroundColor:ac.p+'80',borderRadius:4,borderSkipped:false},{data:l7.map(()=>G.cal),type:'line',borderColor:ac.p,borderWidth:1.5,borderDash:[4,4],pointRadius:0,fill:false}]},options:{plugins:{legend:{display:false}},scales:{x:{...xOpts,grid:{display:false}},y:yOpts}}})}
+  }
+}
+
+// ═══════════════════════════════════════
+// PIN
+// ═══════════════════════════════════════
+let pinBuf='',pinMode='unlock',pinTmp='';
+function renderPin(){
+  applyTheme();
+  const el=document.createElement('div');el.id='pin-sc';el.className='pin-scr';el.style.background=T().bg;
+  el.innerHTML=`<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,${A().p}10,transparent 70%);pointer-events:none"></div>
+    <div class="pin-logo">W·OS</div>
+    <div class="pin-sub" id="pin-sub">Enter your PIN</div>
+    <div class="pin-dots">${[0,1,2,3].map(i=>`<div class="pin-dot" id="pd${i}"></div>`).join('')}</div>
+    <div class="pin-pad">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinPress('${n}')">${n}</button>`).join('')}
+      <button class="pin-key zero" onclick="pinPress('0')">0</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+    </div>`;
+  document.body.appendChild(el);
+}
+function showSetPin(){
+  pinBuf='';pinMode='set1';pinTmp='';
+  const el=document.createElement('div');el.className='scrim';el.id='set-pin-scrim';
+  el.innerHTML=`<div class="sheet" style="display:flex;flex-direction:column;align-items:center;padding:24px 20px">
+    <div class="shandle"></div>
+    <div style="font-size:38px;margin-bottom:4px">🔐</div>
+    <div class="pin-sub" id="sps" style="margin-bottom:22px">Choose a 4-digit PIN</div>
+    <div class="pin-dots">${[0,1,2,3].map(i=>`<div class="pin-dot" id="pd${i}"></div>`).join('')}</div>
+    <div class="pin-pad" style="margin-top:16px">
+      ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" onclick="pinSetPress('${n}')">${n}</button>`).join('')}
+      <button class="pin-key zero" onclick="pinSetPress('0')">0</button>
+      <button class="pin-key del" onclick="pinSetDel()">⌫</button>
+    </div>
+    <button class="btn btn-ghost" style="margin-top:14px;width:100%" onclick="document.getElementById('set-pin-scrim').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(el);
+}
+function updDots(n){document.querySelectorAll('.pin-dot').forEach((d,i)=>d.classList.toggle('fill',i<n))}
+function shakeDots(){document.querySelectorAll('.pin-dot').forEach(d=>{d.classList.add('err');setTimeout(()=>d.classList.remove('err'),500)})}
+function pinPress(n){pinBuf+=n;updDots(pinBuf.length);if(pinBuf.length===4){if(hp(pinBuf)===S.ph_){S.pu=true;document.getElementById('pin-sc')?.remove();render()}else{shakeDots();setTimeout(()=>{pinBuf='';updDots(0)},600)}}}
+function pinDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf.length)}
+function pinSetPress(n){pinBuf+=n;updDots(pinBuf.length);if(pinBuf.length===4){if(pinMode==='set1'){pinTmp=hp(pinBuf);pinBuf='';updDots(0);document.getElementById('sps').textContent='Confirm your PIN';pinMode='set2'}else if(hp(pinBuf)===pinTmp){S.ph_=pinTmp;S.pe=true;save();document.getElementById('set-pin-scrim')?.remove();render()}else{shakeDots();setTimeout(()=>{pinBuf='';updDots(0);document.getElementById('sps').textContent='Mismatch – try again';pinMode='set1';pinTmp=''},700)}}}
+function pinSetDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf.length)}
+function disablePin(){if(confirm('Disable PIN lock?')){S.pe=false;S.ph_='';S.pu=false;save();reRenderSettings()}}
+
+// ═══════════════════════════════════════
+// TAB SWITCH
+// ═══════════════════════════════════════
+const TAB_ORDER=['home','calendar','food','analytics','settings'];
+function switchTab(t){
+  if(t===S.tab&&!S.dv)return;
+  if(breathRunning)stopBreath();
+  const fi=TAB_ORDER.indexOf(S.tab),ti=TAB_ORDER.indexOf(t);
+  S.tab=t;S.dv=false;fSearch='';fSuggs=[];
+  killCharts();applyTheme();updateNav();updateTopBar();
+  const cls=ti>fi?'tab-r':'tab-l';
+  document.getElementById('content').innerHTML=`<div class="${cls}">${buildTab()}</div>`;
+  requestAnimationFrame(()=>{initReveal();buildCharts();if(t==='home')doScoreAnim()});
+  document.getElementById('scroll').scrollTop=0;
+}
+
+// ═══════════════════════════════════════
+// ACTIONS
+// ═══════════════════════════════════════
+function prevMonth(){S.cm===0?(S.cm=11,S.cy--):S.cm--;render()}
+function nextMonth(){S.cm===11?(S.cm=0,S.cy++):S.cm++;render()}
+function selDate(date){S.sel=date;S.dv=true;render();document.getElementById('scroll').scrollTop=0}
+function backFromDay(){S.dv=false;render()}
+function toggleCheck(date,id){S.c[date]=S.c[date]||{};S.c[date][id]=!S.c[date][id];save();if(S.c[date][id]&&navigator.vibrate)navigator.vibrate(10);render()}
+function toggleRew(date){S.rw[date]=!S.rw[date];save();render()}
+function toggleEx(date){S.ex[date]=!S.ex[date];save();render()}
+function addXtra(date){const l=prompt('Task name:');if(l?.trim()){S.xt[date]=S.xt[date]||[];S.xt[date].push({id:Date.now(),l:l.trim(),done:false});save();render()}}
+function toggleXtra(date,i){S.xt[date][i].done=!S.xt[date][i].done;save();render()}
+function delXtra(date,i){S.xt[date].splice(i,1);save();render()}
+function saveNote(date,v){S.n[date]=v;save()}
+function setMood(date,id){S.m[date]=S.m[date]===id?null:id;save();render()}
+function setWater(date,v){S.w[date]=Math.max(0,Math.min(wDrops(),v));save();render()}
+function onSleepSlide(el,date,numId){const v=parseFloat(el.value);S.sl[date]=S.sl[date]||{};S.sl[date].h=v;save();const n=document.getElementById(numId);if(n)n.textContent=v+'h'}
+function setSleepQ(date,q){S.sl[date]=S.sl[date]||{h:7};S.sl[date].q=S.sl[date].q===q?null:q;save();render()}
+function setTheme(k){S.tk=k;save();reRenderSettings()}
+function setAccent(k){S.ak=k;save();reRenderSettings()}
+function toggleWoEd(){S.woed=!S.woed;reRenderSettings()}
+function addExercise(day){const ex=prompt(`Exercise for ${DAYS[day]}:`);if(ex?.trim()){S.wo[day]=S.wo[day]||[];S.wo[day].push(ex.trim());save();reRenderSettings()}}
+function rmExercise(day,i){S.wo[day].splice(i,1);save();reRenderSettings()}
+function toggleESec(sec){S.esec=S.esec===sec?null:sec;reRenderSettings()}
+function addTask(sec){const l=prompt('Task name:');if(!l?.trim())return;const ic=prompt('Icon (emoji):')||'⚡';const t={id:'c'+Date.now(),l:l.trim(),i:ic};if(sec==='ph')S.pt.push(t);else if(sec==='me')S.mt.push(t);else S.ft.push(t);save();reRenderSettings()}
+function delTask(key,id){S[key]=S[key].filter(t=>t.id!==id);save();reRenderSettings()}
+function resetToday(){if(confirm('Reset today?')){const td=today();['c','m','w','sl'].forEach(k=>{delete S[k][td]});save();render()}}
+
+// ═══════════════════════════════════════
+// MODALS — WATER / SLEEP / CALORIE
+// ═══════════════════════════════════════
+function showWaterModal(){
+  const cur=wGoalL();
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='wg-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">Water Goal</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:15px">Each drop = 250ml · Current: ${cur}L</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px">
+      ${[1.5,2,2.5,3,3.5,4].map(l=>`<button onclick="setWaterGoal(${l})" class="btn ${cur===l?'btn-ac':'btn-ghost'}" style="flex:1;min-width:52px">${l}L</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:14px">
+      <input type="number" id="wg-inp" placeholder="Custom L" min=".5" max="6" step=".25"
+        style="flex:1;padding:10px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:15px;font-weight:700;outline:none"/>
+      <button onclick="setWaterGoal(parseFloat(document.getElementById('wg-inp').value))" class="btn btn-ac">Set</button>
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="document.getElementById('wg-scrim').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function setWaterGoal(l){if(!l||isNaN(l)||l<.5)return;S.wgoal=Math.round(l*4)/4;save();document.getElementById('wg-scrim')?.remove();render()}
+
+function showSleepModal(){
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='sg-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:15px">Sleep Goal</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px">
+      ${[5.5,6,6.5,7,7.5,8,8.5,9,9.5,10].map(h=>`<button onclick="setSleepGoal(${h})" class="btn ${S.slgoal===h?'btn-ac':'btn-ghost'}" style="flex:1;min-width:48px">${h}h</button>`).join('')}
+    </div>
+    <button class="btn btn-ghost btn-full" onclick="document.getElementById('sg-scrim').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function setSleepGoal(h){S.slgoal=h;save();document.getElementById('sg-scrim')?.remove();render()}
+
+function showCalModal(){
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='cg-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:4px">Calorie Goal</div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:15px">${S.calgoal?'Manual override: '+S.calgoal+' kcal':'Using TDEE calculation'}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px">
+      ${[1500,1800,2000,2200,2500,3000].map(c=>`<button onclick="setCalGoal(${c})" class="btn ${S.calgoal===c?'btn-ac':'btn-ghost'}" style="flex:1;min-width:52px">${c}</button>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:12px">
+      <input type="number" id="cg-inp" placeholder="Custom kcal" min="1000" max="6000" step="50" value="${S.calgoal||''}"
+        style="flex:1;padding:10px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:15px;font-weight:700;outline:none"/>
+      <button onclick="setCalGoal(parseInt(document.getElementById('cg-inp').value))" class="btn btn-ac">Set</button>
+    </div>
+    ${S.calgoal?`<button class="btn btn-ghost btn-full" style="margin-bottom:8px;color:var(--red)" onclick="S.calgoal=null;save();document.getElementById('cg-scrim').remove();render()">Clear (use TDEE)</button>`:''}
+    <button class="btn btn-ghost btn-full" onclick="document.getElementById('cg-scrim').remove()">Cancel</button>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function setCalGoal(c){if(!c||isNaN(c)||c<500)return;S.calgoal=c;save();document.getElementById('cg-scrim')?.remove();render()}
+
+// ═══════════════════════════════════════
+// WEIGHT LOG MODAL
+// ═══════════════════════════════════════
+function showWeightModal(){
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='wl-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:15px">Log Weight</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px">
+      <div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:5px">Weight kg</div>
+        <input type="number" id="wl-kg" placeholder="${S.body?.cw||70}" step=".1" min="20" max="300"
+          style="width:100%;padding:10px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:800;outline:none"/>
+      </div>
+      <div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:5px">Date</div>
+        <input type="date" id="wl-date" value="${today()}"
+          style="width:100%;padding:10px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;outline:none"/>
+      </div>
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('wl-scrim').remove()">Cancel</button>
+      <button class="btn btn-ac" style="flex:1" onclick="saveWeight()">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(scrim);
+  setTimeout(()=>document.getElementById('wl-kg')?.focus(),120);
+}
+function saveWeight(){
+  const kg=parseFloat(document.getElementById('wl-kg')?.value);
+  const date=document.getElementById('wl-date')?.value||today();
+  if(!kg||isNaN(kg))return;
+  S.wlog=S.wlog||[];
+  S.wlog=S.wlog.filter(e=>e.date!==date);
+  S.wlog.push({date,kg});
+  S.wlog.sort((a,b)=>a.date.localeCompare(b.date));
+  if(date===today()&&S.body)S.body.cw=kg;
+  save();document.getElementById('wl-scrim')?.remove();render();
+}
+function delWeight(i){S.wlog.splice(i,1);save();render()}
+
+// ═══════════════════════════════════════
+// FOOD ACTIONS
+// ═══════════════════════════════════════
+function onFoodInput(val){
+  fSearch=val;fSuggs=val.length>=2?searchFood(val):[];
+  const box=document.getElementById('fsugg-box');if(!box)return;
+  if(!fSuggs.length){box.innerHTML='';return}
+  box.innerHTML=`<div class="fsugg">${fSuggs.map((f,i)=>`<div class="fsugg-item" onclick="selectFS(${i})">
+    <div><div style="font-size:13px;font-weight:700">${f.n}</div><div style="font-size:10px;color:var(--t3)">${f.cat} · ${f.cal} kcal / ${f.std}${f.unit}</div></div>
+    <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;color:var(--ac)">${f.cal}</div>
+  </div>`).join('')}</div>`;
+}
+function onFoodKey(e){if(e.key==='Enter'&&fSuggs.length)selectFS(0)}
+function selectFS(i){
+  const f=fSuggs[i];if(!f)return;
+  fPending=f;fSearch='';fSuggs=[];
+  const box=document.getElementById('fsugg-box');if(box)box.innerHTML='';
+  const inp=document.getElementById('finp');if(inp)inp.value='';
+  showFoodQtyModal(f);
+}
+function showAddCustomFood(){
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='cf-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:14px">Add Custom Food</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${[{id:'cf-name',l:'Food Name',t:'text',ph:'My Protein Shake'},{id:'cf-cal',l:'Calories',t:'number',ph:'350'},{id:'cf-p',l:'Protein g',t:'number',ph:'30'},{id:'cf-c',l:'Carbs g',t:'number',ph:'20'},{id:'cf-f',l:'Fat g',t:'number',ph:'10'},{id:'cf-std',l:'Serving size',t:'number',ph:'100'},{id:'cf-unit',l:'Unit (g/ml/pc)',t:'text',ph:'g'}].map(f=>`<div>
+        <div style="font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);margin-bottom:4px">${f.l}</div>
+        <input id="${f.id}" type="${f.t}" placeholder="${f.ph}" style="width:100%;padding:9px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:14px;font-weight:700;outline:none"/>
+      </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:7px;margin-top:15px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('cf-scrim').remove()">Cancel</button>
+      <button class="btn btn-ac" style="flex:1" onclick="saveCF()">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function saveCF(){
+  const name=document.getElementById('cf-name')?.value?.trim();
+  if(!name)return;
+  S.cfoods=S.cfoods||[];
+  S.cfoods.push({n:name,cal:parseFloat(document.getElementById('cf-cal')?.value)||0,p:parseFloat(document.getElementById('cf-p')?.value)||0,c:parseFloat(document.getElementById('cf-c')?.value)||0,f:parseFloat(document.getElementById('cf-f')?.value)||0,std:parseFloat(document.getElementById('cf-std')?.value)||100,unit:document.getElementById('cf-unit')?.value?.trim()||'g'});
+  save();document.getElementById('cf-scrim')?.remove();render();
+}
+function delCF(i){S.cfoods.splice(i,1);save();render()}
+function selectCF(i){fPending=S.cfoods[i];if(fPending)showFoodQtyModal(fPending)}
+function showFoodQtyModal(food,preQty){
+  const isGram=food.unit==='g'||food.unit==='ml';
+  const defQty=preQty||(isGram?100:food.std||1);
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='fq-scrim';
+  const est=calcEntry(food,defQty);
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-size:16px;font-weight:800;margin-bottom:2px">${food.n}</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:15px">${food.cat} · ${food.cal} kcal per ${food.std}${food.unit}</div>
+    <div class="lbl" style="margin-bottom:7px">Quantity</div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+      ${isGram?[50,100,150,200,250,300].map(v=>`<button onclick="pickPreset(${v})" class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex:1;min-width:42px">${v}${food.unit}</button>`).join('') : [.5,1,1.5,2,3,4].map(v=>`<button onclick="pickPreset(${v})" class="btn btn-ghost" style="font-size:11px;padding:5px 10px;flex:1;min-width:42px">${v}</button>`).join('')}
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px">
+      <input type="number" id="fq-qty" value="${defQty}" min=".1" step="${isGram?10:.5}" oninput="updateQtyPreview(this.value)"
+        style="flex:1;padding:10px 11px;background:#ffffff06;border:1.5px solid var(--l2);border-radius:var(--r8);color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:16px;font-weight:800;outline:none"/>
+      <span style="font-size:13px;color:var(--t3);font-weight:700">${food.unit}</span>
+    </div>
+    <div id="fq-prev" style="background:#ffffff06;border:1px solid var(--l2);border-radius:var(--r12);padding:12px;margin-bottom:16px;display:flex;justify-content:space-around">
+      ${renderFoodPreview(food,defQty)}
+    </div>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost" style="flex:1" onclick="document.getElementById('fq-scrim').remove()">Cancel</button>
+      <button class="btn btn-ac" style="flex:1" onclick="logFoodEntry()">Add to Log</button>
+    </div>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+function renderFoodPreview(food,qty){
+  const e=calcEntry(food,qty);
+  return [{l:'Cal',v:e.cal,c:'var(--ac)'},{l:'Protein',v:e.p+'g',c:'var(--red)'},{l:'Carbs',v:e.c+'g',c:'var(--blue)'},{l:'Fat',v:e.f+'g',c:'var(--purple)'}].map(m=>`<div style="text-align:center">
+    <div style="font-family:'Fraunces',serif;font-size:19px;font-style:italic;color:${m.c}">${m.v}</div>
+    <div style="font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--t3)">${m.l}</div>
+  </div>`).join('');
+}
+function updateQtyPreview(val){
+  const qty=parseFloat(val);if(!fPending||!qty)return;
+  const el=document.getElementById('fq-prev');if(el)el.innerHTML=renderFoodPreview(fPending,qty);
+}
+function pickPreset(val){const inp=document.getElementById('fq-qty');if(inp){inp.value=val;updateQtyPreview(val)}}
+function logFoodEntry(){
+  const qty=parseFloat(document.getElementById('fq-qty')?.value);
+  if(!fPending||!qty)return;
+  const e=calcEntry(fPending,qty);
+  const td=today();
+  S.food[td]=S.food[td]||[];
+  S.food[td].push({name:fPending.n,qtyLabel:qty+fPending.unit,...e});
+  save();fPending=null;document.getElementById('fq-scrim')?.remove();render();
+}
+function delFoodEntry(date,i){S.food[date].splice(i,1);save();render()}
+
+// ═══════════════════════════════════════
+// BREATHING
+// ═══════════════════════════════════════
+const BMODES={
+  '478':{phases:[{n:'Inhale',d:4},{n:'Hold',d:7},{n:'Exhale',d:8}],label:'4-7-8 Relaxation'},
+  'box':{phases:[{n:'Inhale',d:4},{n:'Hold',d:4},{n:'Exhale',d:4},{n:'Hold',d:4}],label:'Box Breathing'},
+  '24': {phases:[{n:'Inhale',d:2},{n:'Exhale',d:4}],label:'2-4 Quick Calm'},
+};
+let bMode='478',breathRunning=false,bTimer=null,bPhase=0,bSec=0,bCycles=0;
+function setBreathMode(id){
+  if(breathRunning)stopBreath();bMode=id;
+  const t=document.getElementById('bm-title');if(t)t.textContent=BMODES[id].label;
+  Object.keys(BMODES).forEach(k=>{const b=document.getElementById('bm-'+k);if(b)b.className='bmbtn'+(k===id?' on':'')});
+  resetBreathUI();
+}
+function resetBreathUI(){
+  const p=document.getElementById('br-phase'),c=document.getElementById('br-count'),a=document.getElementById('br-arc'),i=document.getElementById('br-info');
+  if(p)p.textContent='Ready';if(c)c.textContent='—';if(a)a.setAttribute('stroke-dasharray','0 276');if(i)i.textContent='Tap Start to begin';
+}
+function toggleBreath(){breathRunning?stopBreath():startBreath()}
+function startBreath(){
+  breathRunning=true;bPhase=0;bSec=0;bCycles=0;
+  const btn=document.getElementById('br-btn');if(btn){btn.textContent='Stop';btn.className='btn btn-red';btn.style.cssText='font-size:11px;padding:6px 14px'}
+  runBreathTick();
+}
+function stopBreath(){
+  breathRunning=false;clearTimeout(bTimer);
+  const btn=document.getElementById('br-btn');if(btn){btn.textContent='Start';btn.className='btn btn-ac';btn.style.cssText='font-size:11px;padding:6px 14px'}
+  const i=document.getElementById('br-info');if(i)i.textContent=bCycles>0?`${bCycles} cycle${bCycles>1?'s':''} completed 🌿`:'Tap Start to begin';
+  resetBreathUI();
+}
+function runBreathTick(){
+  if(!breathRunning)return;
+  const phases=BMODES[bMode].phases,phase=phases[bPhase];
+  const rem=phase.d-bSec;
+  const p=document.getElementById('br-phase'),c=document.getElementById('br-count'),a=document.getElementById('br-arc');
+  if(p)p.textContent=phase.n.toUpperCase();if(c)c.textContent=rem;
+  if(a)a.setAttribute('stroke-dasharray',`${(bSec/phase.d)*276} 276`);
+  bSec++;
+  if(bSec>=phase.d){bSec=0;bPhase++;if(bPhase>=phases.length){bPhase=0;bCycles++}}
+  bTimer=setTimeout(runBreathTick,1000);
+}
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+function exportData(){
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`wos-backup-${today()}.json`;a.click();
+}
+function importData(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{try{const d=JSON.parse(ev.target.result);['c','n','ph','wo','rw','ex','xt','d','m','w','sl','food','body','cfoods','wlog','pt','mt','ft','wgoal','slgoal','calgoal'].forEach(k=>{if(d[k]!==undefined)S[k]=d[k]});save();render();alert('Import successful!')}catch{alert('Invalid backup file')}};
+  r.readAsText(f);
+}
+function showReport(){
+  const l30=last(30),str=streak(),avg=Math.round(l30.reduce((a,d)=>a+eff(d),0)/30);
+  const scrim=document.createElement('div');scrim.className='scrim';scrim.id='rep-scrim';
+  scrim.innerHTML=`<div class="sheet">
+    <div class="shandle"></div>
+    <div style="font-family:'Fraunces',serif;font-size:24px;font-style:italic;color:var(--ac);margin-bottom:4px">Monthly Report</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:16px">${new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div>
+    ${[['🔥 Streak',str+' days'],['📊 30d Avg',avg+'%'],['⭐ Perfect Days',l30.filter(d=>eff(d)===100).length+' days'],['✅ Tasks',allT().length+' tracked'],['💧 Water Goal',wGoalL()+'L / day'],['🌙 Sleep Goal',S.slgoal+'h / night'],['🍱 Food Days',Object.keys(S.food||{}).length+' logged'],['⚖️ Weight Logs',(S.wlog||[]).length+' entries']].map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ln)"><span style="font-size:12px;color:var(--t2)">${k}</span><span style="font-size:12px;font-weight:700">${v}</span></div>`).join('')}
+    <button class="btn btn-ghost btn-full" style="margin-top:15px" onclick="document.getElementById('rep-scrim').remove()">Close</button>
+  </div>`;
+  document.body.appendChild(scrim);
+}
+
+// ═══════════════════════════════════════
+// PWA
+// ═══════════════════════════════════════
+(function(){
+  const m={name:'Wellness OS',short_name:'W·OS',start_url:'/',display:'standalone',background_color:'#080706',theme_color:'#0e0d0b',icons:[{src:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='38' fill='%230c0b09'/><text x='96' y='140' font-family='serif' font-size='120' font-style='italic' text-anchor='middle' fill='%23e8d5a3'>W</text></svg>",sizes:'192x192',type:'image/svg+xml'}]};
+  const lnk=document.createElement('link');lnk.rel='manifest';lnk.href=URL.createObjectURL(new Blob([JSON.stringify(m)],{type:'application/json'}));document.head.appendChild(lnk);
+  if('serviceWorker' in navigator){
+    const sw=`const V='wos-v9';self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==V).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline'))))})`;
+    navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'}))).catch(()=>{});
+  }
+})();
+
+// ═══════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════
+render();
+</script>
+</body>
+</html>
