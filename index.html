@@ -219,7 +219,7 @@ body{font-family:'Cabinet Grotesk',sans-serif;background:var(--bg);color:var(--t
     <button class="nb" data-tab="analytics" onclick="switchTab('analytics')">
       <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Stats</span></button>
     <button class="nb" data-tab="ai" onclick="switchTab('ai')">
-      <svg viewBox="0 0 24 24"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z"/><path d="M5 17l.5 1.5L7 19l-1.5.5L5 21l-.5-1.5L3 19l1.5-.5L5 17z"/></svg><span>AI</span></button>
+      <svg viewBox="0 0 24 24"><path d="M12 2l1.5 4.5L18 8l-4.5 1.5L12 14l-1.5-4.5L6 8l4.5-1.5L12 2z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8L19 14z"/></svg><span>AI</span></button>
     <button class="nb" data-tab="settings" onclick="switchTab('settings')">
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span>Settings</span></button>
   </nav>
@@ -565,8 +565,8 @@ function updateTopBar(){
   const pct=document.getElementById('tr-pct');if(pct)pct.textContent=e+'%';
 }
 function buildTab(){
-  if(S.tab==='ai')return buildAI();
   if(S.tab==='calendar')return S.dv?buildDay():buildCal();
+  if(S.tab==='ai')return buildAI();
   if(S.tab==='food')return buildFood();
   if(S.tab==='analytics')return buildAnalytics();
   if(S.tab==='settings')return buildSettings();
@@ -1514,29 +1514,26 @@ function logFoodEntry(){
 function delFoodEntry(date,i){S.food[date].splice(i,1);save();render()}
 
 // ═══════════════════════════════════════
-// AI COACH TAB
+// AI COACH
 // ═══════════════════════════════════════
-let aiMessages=[];
-let aiLoading=false;
+const PROXY='https://wellness-os-proxy.sainianantraj.workers.dev';
+let aiMessages=[],aiLoading=false;
 
 function buildAI(){
-  const td=today();
-  const mood=S.m[td],sl=S.sl[td],water=S.w[td]||0;
-  const bb=Math.round((()=>{
-    const all=allT(),ch=S.c[td]||{},done=all.filter(t=>ch[t.id]).length;
-    const taskSc=all.length?Math.round(done/all.length*100):0;
-    const waterSc=wPct(water);
-    const moodMap={awful:0,bad:25,meh:50,good:75,great:100};
-    const moodSc=mood?(moodMap[mood]||50):50;
-    const sleepSc=sl?.h?Math.min(100,Math.round(sl.h/(S.slgoal||8)*100)):50;
-    return taskSc*.3+waterSc*.25+moodSc*.25+sleepSc*.2;
-  })());
+  const td=today(),mood=S.m[td],sl=S.sl[td],water=S.w[td]||0;
+  const all=allT(),ch=S.c[td]||{},done=all.filter(t=>ch[t.id]).length;
+  const taskSc=all.length?Math.round(done/all.length*100):0;
+  const moodMap={awful:0,bad:25,meh:50,good:75,great:100};
+  const moodSc=mood?(moodMap[mood]||50):50;
+  const sleepSc=sl?.h?Math.min(100,Math.round(sl.h/(S.slgoal||8)*100)):50;
+  const waterSc=wPct(water);
+  const bb=Math.round(taskSc*.3+waterSc*.25+moodSc*.25+sleepSc*.2);
   const str=streak();
-  const goals=getGoals();
   const todayFood=S.food[td]||[];
-  const todayCal=todayFood.reduce((a,f)=>a+f.cal,0);
+  const todayCal=todayFood.reduce((a,f)=>a+(f.cal||0),0);
+  const goals=getGoals();
 
-  const quickPrompts=[
+  const qp=[
     {e:'⚡',t:'Why is my energy low today?'},
     {e:'🍽️',t:'What should I eat to hit my goals?'},
     {e:'📊',t:'Analyze my week and give advice'},
@@ -1547,8 +1544,6 @@ function buildAI(){
   return `
   <div style="padding:14px 14px 0">
     <div class="lbl" style="margin-bottom:12px;color:var(--ac)">AI Coach</div>
-
-    <!-- Hero card -->
     <div class="card rev" style="margin:0 0 8px">
       <div style="padding:14px 15px 12px;display:flex;align-items:center;gap:12px">
         <div style="width:44px;height:44px;border-radius:50%;background:var(--ac)20;border:1.5px solid var(--ac)40;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">✦</div>
@@ -1557,59 +1552,51 @@ function buildAI(){
           <div style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--t3);margin-top:2px">POWERED BY ANTHROPIC</div>
         </div>
       </div>
-      <!-- Stats row -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border-top:1px solid var(--ln)">
-        ${[['Battery',bb+'%'],['Streak',str+'d'],['Cal',todayCal+' eaten'],['Sleep',sl?.h?sl.h+'h':'—']].map(([l,v])=>`
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ln)">
+        ${[['Battery',bb+'%'],['Streak',str+'d'],['Calories',todayCal+' cal'],['Sleep',sl?.h?sl.h+'h':'—']].map(([l,v])=>`
         <div style="padding:10px 4px;text-align:center;border-right:1px solid var(--ln)">
           <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;color:var(--ac)">${v}</div>
           <div style="font-size:7px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--t3);margin-top:2px">${l}</div>
         </div>`).join('')}
       </div>
     </div>
-
-    <!-- Chat area -->
     <div class="card rev" style="margin:0 0 8px">
-      <div id="ai-chat" style="padding:12px 14px;max-height:340px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:80px">
+      <div id="ai-chat" style="padding:12px 14px;max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;min-height:80px">
         ${aiMessages.length===0?`<div style="text-align:center;padding:20px 0">
           <div style="font-size:22px;margin-bottom:6px">✦</div>
           <div style="font-size:12px;color:var(--t3)">Ask me anything about your wellness</div>
-        </div>`:aiMessages.map(m=>m.role==='user'?
-          `<div style="align-self:flex-end;background:var(--ac)18;border:1px solid var(--ac)30;border-radius:14px 14px 4px 14px;padding:9px 12px;font-size:13px;font-weight:700;color:var(--t);max-width:82%">${m.content}</div>`:
-          `<div style="align-self:flex-start;background:var(--p3);border:1px solid var(--ln);border-radius:4px 14px 14px 14px;padding:9px 12px;font-size:13px;line-height:1.55;color:var(--t2);max-width:90%">${m.content}</div>`
+        </div>`:aiMessages.map(m=>m.role==='user'
+          ?`<div style="align-self:flex-end;background:var(--ac)18;border:1px solid var(--ac)30;border-radius:14px 14px 4px 14px;padding:9px 12px;font-size:13px;font-weight:700;color:var(--t);max-width:82%">${m.content}</div>`
+          :`<div style="align-self:flex-start;background:var(--p3);border:1px solid var(--ln);border-radius:4px 14px 14px 14px;padding:9px 12px;font-size:13px;line-height:1.55;color:var(--t2);max-width:90%">${m.content}</div>`
         ).join('')}
-        ${aiLoading?`<div style="align-self:flex-start;background:var(--p3);border:1px solid var(--ln);border-radius:4px 14px 14px 14px;padding:9px 12px" id="ai-typing">
-          <div style="display:flex;gap:4px;align-items:center">
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1s infinite"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1s .2s infinite"></div>
-            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1s .4s infinite"></div>
+        ${aiLoading?`<div style="align-self:flex-start;background:var(--p3);border:1px solid var(--ln);border-radius:4px 14px 14px 14px;padding:9px 14px">
+          <div style="display:flex;gap:5px;align-items:center">
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1.2s infinite .0s"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1.2s infinite .2s"></div>
+            <div style="width:6px;height:6px;border-radius:50%;background:var(--ac);animation:aiDot 1.2s infinite .4s"></div>
           </div>
         </div>`:''}
       </div>
       <div style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--ln)">
-        <input id="ai-inp" type="text" placeholder="Ask your coach..." 
+        <input id="ai-inp" type="text" placeholder="Ask your coach..."
           style="flex:1;background:var(--p3);border:1.5px solid var(--l2);border-radius:var(--r12);padding:9px 12px;color:var(--t);font-family:'Cabinet Grotesk',sans-serif;font-size:13px;font-weight:700;outline:none"
-          onkeydown="if(event.key==='Enter')sendAI()"
-        />
+          onkeydown="if(event.key==='Enter')sendAI()"/>
         <button onclick="sendAI()" class="btn btn-ac" style="padding:9px 16px;font-size:15px">→</button>
       </div>
     </div>
-
-    <!-- Quick prompts -->
     <div style="font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Quick Ask</div>
-    <div class="card rev" style="margin:0 0 16px;overflow:hidden">
-      ${quickPrompts.map(p=>`<div onclick="askAI('${p.t}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--ln);cursor:pointer;transition:background .1s" ontouchstart="this.style.background='var(--p3)'" ontouchend="this.style.background=''">
+    <div class="card rev" style="margin:0 0 16px">
+      ${qp.map((p,i)=>`<div onclick="askAI('${p.t}')" style="display:flex;align-items:center;gap:10px;padding:11px 14px;${i>0?'border-top:1px solid var(--ln)':''}cursor:pointer">
         <span style="font-size:16px">${p.e}</span>
-        <span style="font-size:13px;font-weight:700;color:var(--t2)">${p.t}</span>
-        <span style="margin-left:auto;font-size:14px;color:var(--t3)">›</span>
+        <span style="font-size:13px;font-weight:700;color:var(--t2);flex:1">${p.t}</span>
+        <span style="font-size:14px;color:var(--t3)">›</span>
       </div>`).join('')}
     </div>
   </div>
-  <style>
-    @keyframes aiDot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
-  </style>`;
+  <style>@keyframes aiDot{0%,80%,100%{opacity:.2;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}</style>`;
 }
 
-async function sendAI(){
+function sendAI(){
   const inp=document.getElementById('ai-inp');
   const msg=inp?.value?.trim();
   if(!msg||aiLoading)return;
@@ -1620,10 +1607,7 @@ async function sendAI(){
 async function askAI(msg){
   if(aiLoading)return;
   aiLoading=true;
-
-  // Build context from user's data
-  const td=today();
-  const mood=S.m[td],sl=S.sl[td],water=S.w[td]||0;
+  const td=today(),mood=S.m[td],sl=S.sl[td],water=S.w[td]||0;
   const all=allT(),ch=S.c[td]||{},done=all.filter(t=>ch[t.id]).length;
   const taskSc=all.length?Math.round(done/all.length*100):0;
   const moodMap={awful:0,bad:25,meh:50,good:75,great:100};
@@ -1631,53 +1615,34 @@ async function askAI(msg){
   const sleepSc=sl?.h?Math.min(100,Math.round(sl.h/(S.slgoal||8)*100)):50;
   const waterSc=wPct(water);
   const bb=Math.round(taskSc*.3+waterSc*.25+moodSc*.25+sleepSc*.2);
-  const str=streak();
-  const goals=getGoals();
   const todayFood=S.food[td]||[];
-  const todayCal=todayFood.reduce((a,f)=>a+f.cal,0);
-  const l7=last(7).map(d=>({date:d,score:eff(d),mood:S.m[d],sleep:S.sl[d]?.h}));
-
-  const systemPrompt=`You are a personal wellness coach inside W·OS app, built by Anant Raj Saini, a medical student at Perm State Medical University, Russia.
-
-User's current data:
-- Body battery: ${bb}/100
-- Today's score: ${taskSc}% tasks done
-- Mood: ${mood||'not logged'} (${moodSc}/100)
-- Sleep: ${sl?.h||'not logged'}h (goal: ${S.slgoal}h, quality: ${sl?.q||'not rated'})
-- Water: ${wLabel(water)} of ${wGoalL()}L goal (${waterSc}%)
-- Calories today: ${todayCal} of ${goals.cal} goal
-- Today's food: ${todayFood.map(f=>f.name).join(', ')||'nothing logged yet'}
-- Current streak: ${str} days
-- Weight: ${S.body?.cw||'?'}kg, goal: ${S.body?.gw||'?'}kg
-- BMR: ${S.body?.cw?calcBMR(S.body):0} kcal, TDEE: ${S.body?.cw?calcTDEE(S.body):0} kcal
-- Last 7 days scores: ${l7.map(d=>`${d.date.slice(5)}:${d.score}%`).join(', ')}
-
-Be concise, warm, specific to their actual data. Max 3-4 sentences. Use numbers from their data. No generic advice.`;
+  const todayCal=todayFood.reduce((a,f)=>a+(f.cal||0),0);
+  const l7=last(7).map(d=>d.slice(5)+':'+eff(d)+'%').join(', ');
+  const sys=`You are a personal wellness coach inside W·OS app built by Anant Raj Saini, a medical student at Perm State Medical University Russia.
+User data today: body battery ${bb}/100, tasks ${taskSc}%, mood ${mood||'not logged'} (${moodSc}/100), sleep ${sl?.h||'not logged'}h (goal ${S.slgoal}h, quality ${sl?.q||'not rated'}), water ${wLabel(water)} of ${wGoalL()}L (${waterSc}%), calories ${todayCal} of ${getGoals().cal} goal, food: ${todayFood.map(f=>f.name).join(', ')||'nothing'}, streak ${streak()} days, weight ${S.body?.cw||'?'}kg goal ${S.body?.gw||'?'}kg, last 7 days: ${l7}.
+Be concise warm specific to their data. Max 3-4 sentences. Use their actual numbers.`;
 
   aiMessages.push({role:'user',content:msg});
   render();
-
-  // Scroll chat to bottom
   setTimeout(()=>{const c=document.getElementById('ai-chat');if(c)c.scrollTop=c.scrollHeight},50);
 
   try{
-    const res=await fetch('https://wellness-os-proxy.sainianantraj.workers.dev'),{
+    const res=await fetch(PROXY,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:1000,
-        system:systemPrompt,
+        system:sys,
         messages:aiMessages.map(m=>({role:m.role,content:m.content}))
       })
     });
     const data=await res.json();
-    const reply=data.content?.map(b=>b.text||'').join('')||'Sorry, I had trouble connecting. Try again!';
+    const reply=data.content?.map(b=>b.text||'').join('')||'Could not get response, try again!';
     aiMessages.push({role:'assistant',content:reply});
   }catch(e){
-    aiMessages.push({role:'assistant',content:'Connection issue — make sure you have internet and try again! 🌐'});
+    aiMessages.push({role:'assistant',content:'Connection issue — check internet and try again! 🌐'});
   }
-
   aiLoading=false;
   render();
   setTimeout(()=>{const c=document.getElementById('ai-chat');if(c)c.scrollTop=c.scrollHeight},100);
