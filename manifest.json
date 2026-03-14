@@ -1,0 +1,33 @@
+{
+  "name": "Wellness OS",
+  "short_name": "W·OS",
+  "description": "Your personal wellness operating system — track mood, sleep, food, habits and more.",
+  "start_url": "/wellness-os/",
+  "scope": "/wellness-os/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0eeff",
+  "theme_color": "#9b7fe8",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "lifestyle"],
+  "screenshots": [
+    {
+      "src": "assets/screenshot1.png",
+      "sizes": "390x844",
+      "type": "image/png"
+    }
+  ]
+}
