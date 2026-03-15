@@ -524,6 +524,8 @@ let S={
   slgoal:LS.g('wos_slgoal',8),
   calgoal:LS.g('wos_calgoal',null),
   wlog:LS.g('wos_wlog',[]),
+  onboarded:LS.g('wos_onboarded',false),
+  progressLog:LS.g('wos_progress',{}),
 };
 function save(){
   LS.s('wos_tk',S.tk);LS.s('wos_ak',S.ak);
@@ -536,6 +538,7 @@ function save(){
   LS.s('wos_food',S.food);LS.s('wos_fitlog',S.fitLog||{});LS.s('wos_body',S.body);LS.s('wos_cfoods',S.cfoods);
   LS.s('wos_wgoal',S.wgoal);LS.s('wos_slgoal',S.slgoal);
   LS.s('wos_calgoal',S.calgoal);LS.s('wos_wlog',S.wlog);
+  LS.s('wos_onboarded',S.onboarded);LS.s('wos_progress',S.progressLog||{});
 }
 
 // ═══════════════════════════════════════
@@ -638,6 +641,7 @@ let charts={};
 function killCharts(){Object.values(charts).forEach(c=>{try{c.destroy()}catch{}});charts={}}
 function render(){
   if(S.pe&&!S.pu){renderPin();return}
+  if(!S.onboarded){renderOnboarding();return}
   killCharts();applyTheme();updateNav();updateTopBar();
   document.getElementById('content').innerHTML=`<div class="tab-r">${buildTab()}</div>`;
   requestAnimationFrame(()=>{initReveal();buildCharts();if(S.tab==='home')doScoreAnim()});
@@ -1073,56 +1077,100 @@ function buildFood(){
   const td=today(),entries=getTodayFood(),tot=getFoodTotals(entries),G=getGoals();
   const calPct=Math.min(100,Math.round(tot.cal/G.cal*100));
   const calCol=tot.cal>G.cal*1.1?'var(--red)':tot.cal>G.cal*.85?'var(--green)':'var(--ac)';
-  const ring=(v,mx,col,r=18)=>{
+  const remaining=G.cal-Math.round(tot.cal);
+
+  const ring=(v,mx,col,r=20)=>{
     const c=2*Math.PI*r,d=Math.min(v/mx,1)*c;
     return `<svg width="${r*2+8}" height="${r*2+8}" viewBox="0 0 ${r*2+8} ${r*2+8}">
-      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="var(--ln)" stroke-width="3"/>
-      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="${col}" stroke-width="3"
+      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="var(--ln)" stroke-width="3.5"/>
+      <circle cx="${r+4}" cy="${r+4}" r="${r}" fill="none" stroke="${col}" stroke-width="3.5"
         stroke-dasharray="${d} ${c}" stroke-linecap="round" transform="rotate(-90 ${r+4} ${r+4})" style="transition:stroke-dasharray .8s var(--ease)"/>
     </svg>`;
   };
+
+  // Meal suggestions based on time
+  const hr=new Date().getHours();
+  const mealTime=hr<11?'Breakfast':hr<15?'Lunch':hr<19?'Dinner':'Snack';
+  const mealSuggestions={
+    Breakfast:['Oats','Egg Bhurji (2 eggs)','Bread (brown)','Milk (full fat)','Banana'],
+    Lunch:['Dal Rice','Rajma Chawal','Roti','Chicken (curry)','Curd / Dahi'],
+    Dinner:['Khichdi','Dal Makhani','Chapati / Roti','Paneer','Rice (cooked)'],
+    Snack:['Almonds','Peanuts (roasted)','Greek Yogurt','Banana','Protein Shake'],
+  };
+  const suggestions=mealSuggestions[mealTime]||[];
+
   return `
-  <div style="padding:20px 18px 14px;border-bottom:1px solid var(--ln)">
-    <div class="lbl">Nutrition · Today</div>
-    <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:5px">
-      <div>
-        <div style="font-family:'Fraunces',serif;font-size:52px;font-weight:300;font-style:italic;letter-spacing:-2px;line-height:1;color:${calCol}">${Math.round(tot.cal)}</div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
-          <span style="font-size:11px;color:var(--t3);font-weight:700">kcal · goal <span style="color:var(--ac)">${G.cal}</span></span>
-          <button onclick="showCalModal()" class="btn btn-ghost" style="font-size:9px;padding:2px 8px">${S.calgoal?'Manual ✕':'⚙ Goal'}</button>
+  <!-- HERO NUTRITION CARD -->
+  <div style="margin:16px 16px 0">
+    <div style="background:var(--p2);border:1px solid var(--ln);border-radius:var(--r16);overflow:hidden">
+      <!-- Calorie header -->
+      <div style="padding:18px 18px 14px;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,${calCol}10 0%,transparent 70%);pointer-events:none"></div>
+        <div class="lbl" style="margin-bottom:8px">Nutrition · Today</div>
+        <div style="display:flex;align-items:flex-end;justify-content:space-between">
+          <div>
+            <div style="font-family:'Fraunces',serif;font-size:58px;font-weight:300;font-style:italic;letter-spacing:-2px;line-height:1;color:${calCol}" id="score-num" data-t="${Math.round(tot.cal)}">${Math.round(tot.cal)}</div>
+            <div style="font-size:11px;color:var(--t3);font-weight:700;margin-top:4px">kcal · goal <span style="color:var(--ac)">${G.cal}</span>
+              <button onclick="showCalModal()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:10px;font-weight:700;margin-left:6px;font-family:'Cabinet Grotesk',sans-serif">${S.calgoal?'✕ reset':'⚙'}</button>
+            </div>
+          </div>
+          <div style="text-align:right;padding-bottom:4px">
+            <div style="font-family:'Fraunces',serif;font-size:32px;font-style:italic;color:${remaining>=0?'var(--green)':'var(--red)'}">${Math.abs(remaining)}</div>
+            <div style="font-size:9px;color:var(--t3);font-weight:700;letter-spacing:1px;text-transform:uppercase">${remaining>=0?'remaining':'over'}</div>
+          </div>
         </div>
+        <div class="cmeter" style="margin-top:10px"><div class="cmfill" style="width:${calPct}%;background:linear-gradient(90deg,${calCol}80,${calCol})"></div></div>
       </div>
-      <div style="text-align:right;padding-bottom:3px">
-        <div style="font-family:'Fraunces',serif;font-size:28px;font-style:italic;color:${G.cal-Math.round(tot.cal)>=0?'var(--green)':'var(--red)'}">${Math.abs(G.cal-Math.round(tot.cal))}</div>
-        <div style="font-size:9px;color:var(--t3);font-weight:700">${G.cal-Math.round(tot.cal)>=0?'remaining':'over'}</div>
+
+      <!-- Macro rings -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--ln)">
+        ${[{l:'Protein',v:Math.round(tot.p),g:G.p,c:'var(--red)'},{l:'Carbs',v:Math.round(tot.c),g:G.c,c:'var(--blue)'},{l:'Fat',v:Math.round(tot.f),g:G.f,c:'var(--purple)'},{l:'Cal',v:Math.round(tot.cal),g:G.cal,c:calCol}].map((m,i)=>`
+        <div style="padding:12px 4px;text-align:center;${i<3?'border-right:1px solid var(--ln)':''}">
+          ${ring(m.v,m.g,m.c)}
+          <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;line-height:1;color:${m.c};margin-top:2px">${m.v}<span style="font-size:9px;opacity:.6">${m.l==='Cal'?'':' g'}</span></div>
+          <div style="font-size:7px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-top:2px">${m.l}</div>
+          <div style="font-size:8px;color:var(--t3);opacity:.7">/${m.g}${m.l==='Cal'?'':' g'}</div>
+        </div>`).join('')}
       </div>
     </div>
-    <div class="cmeter"><div class="cmfill" style="width:${calPct}%;background:${calCol}"></div></div>
   </div>
-  <div style="border-bottom:1px solid var(--ln)">
-    <div class="mrings">
-      ${[{l:'Protein',v:Math.round(tot.p),g:G.p,c:'var(--red)'},{l:'Carbs',v:Math.round(tot.c),g:G.c,c:'var(--blue)'},{l:'Fat',v:Math.round(tot.f),g:G.f,c:'var(--purple)'},{l:'Cal',v:Math.round(tot.cal),g:G.cal,c:calCol}].map(m=>`<div class="mring-tile">
-        ${ring(m.v,m.g,m.c)}
-        <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;line-height:1;color:${m.c}">${m.v}</div>
-        <div style="font-size:8px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--t3)">${m.l}</div>
-        <div style="font-size:8px;color:var(--t3)">/${m.g}</div>
-      </div>`).join('')}
-    </div>
-  </div>
-  <div style="padding:13px 14px 8px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+
+  <!-- SEARCH -->
+  <div style="padding:14px 16px 10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
       <div class="lbl">Log Food</div>
-      <button onclick="showAddCustomFood()" class="btn btn-ac" style="font-size:10px;padding:4px 12px">+ Custom</button>
+      <button onclick="showAddCustomFood()" class="btn btn-ac" style="font-size:10px;padding:5px 14px">+ Custom</button>
     </div>
     <div style="position:relative">
-      <span style="position:absolute;top:50%;transform:translateY(-50%);left:12px;font-size:14px;pointer-events:none">🔍</span>
-      <input class="fsearch" id="finp" type="text" placeholder="aloo gobi, pelmeni, chicken…" value="${fSearch}"
+      <span style="position:absolute;top:50%;transform:translateY(-50%);left:13px;font-size:15px;pointer-events:none">🔍</span>
+      <input class="fsearch" id="finp" type="text" placeholder="Search ${FOOD_DB.length}+ foods…" value="${fSearch}"
         oninput="onFoodInput(this.value)" onkeydown="onFoodKey(event)" autocomplete="off" spellcheck="false"/>
     </div>
     <div id="fsugg-box"></div>
-    <div style="font-size:10px;color:var(--t3);margin-top:6px">Try: "100g chicken" · "2 roti" · "borscht"</div>
   </div>
-  ${S.cfoods?.length?`<div style="padding:4px 14px 4px"><div class="lbl" style="margin-bottom:7px">My Foods</div></div>
+
+  <!-- MEAL SUGGESTIONS -->
+  <div style="padding:0 16px 12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="lbl">${mealTime} Suggestions</div>
+      <div style="font-size:10px;color:var(--t3);font-weight:700">${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+      ${suggestions.map(name=>{
+        const food=FOOD_DB.find(f=>f.n===name);
+        if(!food)return'';
+        return`<div onclick="selectFood(FOOD_DB.find(f=>f.n==='${name.replace(/'/g,"\\'")}'))" style="flex-shrink:0;background:var(--p2);border:1px solid var(--ln);border-radius:var(--r12);padding:10px 12px;cursor:pointer;min-width:90px;text-align:center">
+          <div style="font-size:11px;font-weight:700;color:var(--t);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px">${food.n.length>10?food.n.slice(0,10)+'…':food.n}</div>
+          <div style="font-family:'Fraunces',serif;font-size:16px;font-style:italic;color:var(--ac)">${food.cal}</div>
+          <div style="font-size:8px;color:var(--t3)">per ${food.std}${food.unit}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <!-- CUSTOM FOODS -->
+  ${S.cfoods?.length?`
+  <div style="padding:4px 16px 8px"><div class="lbl" style="margin-bottom:8px">My Foods</div></div>
   <div class="card" style="margin-bottom:8px">
     ${S.cfoods.map((f,i)=>`<div class="trow" onclick="selectCF(${i})">
       <div style="flex:1"><div style="font-size:13px;font-weight:700">${f.n}</div><div style="font-size:10px;color:var(--t3)">P:${f.p} C:${f.c} F:${f.f} · per ${f.std}${f.unit}</div></div>
@@ -1130,21 +1178,32 @@ function buildFood(){
       <button onclick="event.stopPropagation();delCF(${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;padding:0 5px">×</button>
     </div>`).join('')}
   </div>`:''}
-  <div style="padding:12px 14px 4px"><div class="lbl">Today's Log${entries.length?` · ${entries.length} items`:''}</div></div>
-  ${entries.length===0?`<div style="padding:20px 14px;text-align:center;font-size:13px;color:var(--t3)">Nothing logged yet 🍱</div>`:`
-  <div class="card" style="margin-bottom:8px">
+
+  <!-- TODAY'S LOG -->
+  <div style="padding:4px 16px 8px;display:flex;align-items:center;justify-content:space-between">
+    <div class="lbl">Today's Log${entries.length?` · ${entries.length} items`:''}</div>
+    ${entries.length?`<div style="font-size:10px;color:var(--t3);font-weight:700">${Math.round(tot.cal)} kcal total</div>`:''}
+  </div>
+  ${entries.length===0
+    ?`<div style="padding:28px 14px;text-align:center"><div style="font-size:32px;margin-bottom:8px">🍱</div><div style="font-size:12px;color:var(--t3)">Nothing logged yet</div></div>`
+    :`<div class="card" style="margin-bottom:8px">
     ${entries.map((e,i)=>`<div class="flog-item">
-      <div style="flex:1"><div style="font-size:13px;font-weight:700">${e.name}</div><div style="font-size:10px;color:var(--t3)">${e.qtyLabel} · P:${e.p}g C:${e.c}g F:${e.f}g</div></div>
-      <div style="font-family:'Fraunces',serif;font-size:17px;font-style:italic;color:var(--ac)">${e.cal}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700">${e.name}</div>
+        <div style="font-size:10px;color:var(--t3)">${e.qtyLabel} · P:${e.p}g C:${e.c}g F:${e.f}g</div>
+      </div>
+      <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--ac)">${e.cal}</div>
       <button onclick="delFoodEntry('${td}',${i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;padding:0 5px">×</button>
     </div>`).join('')}
-    <div style="padding:9px 14px;border-top:1px solid var(--ln);display:flex;justify-content:space-between">
+    <div style="padding:10px 14px;border-top:1px solid var(--ln);display:flex;justify-content:space-between;align-items:center">
       <span class="lbl">Total</span>
       <span style="font-size:11px;color:var(--t2)">P:${Math.round(tot.p)}g C:${Math.round(tot.c)}g F:${Math.round(tot.f)}g</span>
-      <span style="font-family:'Fraunces',serif;font-size:17px;font-style:italic;color:var(--ac)">${Math.round(tot.cal)} kcal</span>
+      <span style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--ac)">${Math.round(tot.cal)}</span>
     </div>
   </div>`}
-  <div style="padding:8px 14px 4px"><div class="lbl">This Week</div></div>
+
+  <!-- WEEKLY CHART -->
+  <div style="padding:4px 16px 8px"><div class="lbl">This Week</div></div>
   <div class="chartcard rev"><div class="chartcard-body"><canvas id="foodChart" height="90"></canvas></div></div>
   <div class="g16"></div>`;
 }
@@ -1156,29 +1215,63 @@ function buildAnalytics(){
   const l30=last(30),str=streak();
   const avg=Math.round(l30.reduce((a,d)=>a+eff(d),0)/30);
   const perfect=l30.filter(d=>eff(d)===100).length;
+  const best=Math.max(...l30.map(d=>eff(d)));
+  const totalCal=Object.values(S.food||{}).reduce((a,day)=>a+day.reduce((b,e)=>b+(e.cal||0),0),0);
+  const totalWorkouts=Object.values(S.fitLog||{}).reduce((a,day)=>a+day.length,0);
+
   return `
-  <div style="padding:18px 14px 6px"><div class="lbl">Your Progress</div></div>
-  <div class="sgrid">
-    ${[{v:str,l:'Day Streak',e:'🔥'},{v:avg+'%',l:'30d Avg',e:'📊'},{v:perfect,l:'Perfect Days',e:'⭐'},{v:allT().length,l:'Total Tasks',e:'✓'}].map(s=>`
-    <div class="stile rev">
-      <div style="font-size:22px;margin-bottom:4px">${s.e}</div>
-      <div class="sval">${s.v}</div>
-      <div class="slbl">${s.l}</div>
-    </div>`).join('')}
+  <div style="padding:20px 16px 6px">
+    <div class="lbl" style="margin-bottom:16px">Your Progress</div>
+
+    <!-- Top stats grid -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      ${[
+        {v:str,l:'Day Streak',e:'🔥',c:'var(--red)'},
+        {v:avg+'%',l:'30d Average',e:'📊',c:'var(--ac)'},
+        {v:perfect,l:'Perfect Days',e:'⭐',c:'var(--ac)'},
+        {v:best+'%',l:'Best Score',e:'🏆',c:'var(--green)'},
+      ].map(s=>`<div class="stile rev" style="position:relative;overflow:hidden">
+        <div style="position:absolute;top:10px;right:12px;font-size:22px;opacity:.4">${s.e}</div>
+        <div class="sval" style="color:${s.c}">${s.v}</div>
+        <div class="slbl">${s.l}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Extra stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+      ${[
+        ['Total Tasks',allT().length+''],
+        ['Meals Logged',Object.keys(S.food||{}).length+' days'],
+        ['Workouts',totalWorkouts+''],
+      ].map(([l,v])=>`<div style="background:var(--p3);border:1px solid var(--ln);border-radius:var(--r12);padding:12px;text-align:center">
+        <div style="font-family:'Fraunces',serif;font-size:20px;font-style:italic;color:var(--ac)">${v}</div>
+        <div style="font-size:7px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--t3);margin-top:3px">${l}</div>
+      </div>`).join('')}
+    </div>
   </div>
+
+  <!-- Charts -->
   <div class="chartcard rev">
-    <div class="chartcard-head"><span class="lbl">30-Day Score</span></div>
+    <div class="chartcard-head" style="display:flex;justify-content:space-between;align-items:center">
+      <span class="lbl">30-Day Score</span>
+      <span style="font-size:10px;color:var(--t3);font-weight:700">${avg}% avg</span>
+    </div>
     <div class="chartcard-body"><canvas id="scoreChart" height="90"></canvas></div>
   </div>
   <div class="g8"></div>
   <div class="chartcard rev">
-    <div class="chartcard-head"><span class="lbl">Mood Trend</span></div>
+    <div class="chartcard-head" style="display:flex;justify-content:space-between;align-items:center">
+      <span class="lbl">Mood Trend</span>
+      <span style="font-size:10px;color:var(--purple);font-weight:700">last 30 days</span>
+    </div>
     <div class="chartcard-body"><canvas id="moodChart" height="75"></canvas></div>
   </div>
   <div class="g8"></div>
-  <div style="padding:8px 14px 0;display:flex;align-items:center;justify-content:space-between">
+
+  <!-- Weight log -->
+  <div style="padding:8px 16px 0;display:flex;align-items:center;justify-content:space-between">
     <div class="lbl">Weight Log</div>
-    <button onclick="showWeightModal()" class="btn btn-ac" style="font-size:10px;padding:4px 12px">+ Log</button>
+    <button onclick="showWeightModal()" class="btn btn-ac" style="font-size:10px;padding:5px 14px">+ Log</button>
   </div>
   ${S.wlog?.length?`
   <div class="chartcard rev" style="margin-top:8px">
@@ -1186,12 +1279,12 @@ function buildAnalytics(){
   </div>
   <div class="g8"></div>
   <div class="card">
-    ${[...S.wlog].reverse().slice(0,10).map((e,i)=>`<div class="wlrow">
+    ${[...S.wlog].reverse().slice(0,8).map((e,i)=>`<div class="wlrow">
       <span style="font-size:11px;color:var(--t3)">${e.date}</span>
       <span style="font-family:'Fraunces',serif;font-size:22px;font-style:italic;color:var(--ac)">${e.kg} kg</span>
       <button onclick="delWeight(${S.wlog.length-1-i})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:18px;padding:0 4px">×</button>
     </div>`).join('')}
-  </div>`:`<div style="padding:12px 14px;font-size:12px;color:var(--t3)">No weight entries yet</div>`}
+  </div>`:`<div style="padding:20px 16px;text-align:center"><div style="font-size:28px;margin-bottom:8px">⚖️</div><div style="font-size:12px;color:var(--t3)">No weight logged yet</div></div>`}
   <div class="g16"></div>`;
 }
 
@@ -1311,7 +1404,8 @@ function buildSettings(){
     <div style="padding:13px;display:flex;flex-direction:column;gap:7px">
       <button class="btn btn-ac btn-full" onclick="exportData()">⬇ Export Backup</button>
       <label class="btn btn-ghost btn-full" style="cursor:pointer">⬆ Import Backup<input type="file" accept=".json" style="display:none" onchange="importData(event)"/></label>
-      <button class="btn btn-full" style="background:var(--ac)12;color:var(--ac);border-color:var(--ac)28" onclick="showReport()">◈ Monthly Report</button>
+      <button class="btn btn-full" style="background:var(--green)12;color:var(--green);border-color:var(--green)28" onclick="generatePDFReport()">📄 Health Report</button>
+      <button class="btn btn-full" style="background:var(--ac)12;color:var(--ac);border-color:var(--ac)28" onclick="showReport()">◈ Monthly Summary</button>
     </div>
   </div>
   <div class="g8"></div>
@@ -1462,7 +1556,23 @@ function prevMonth(){S.cm===0?(S.cm=11,S.cy--):S.cm--;render()}
 function nextMonth(){S.cm===11?(S.cm=0,S.cy++):S.cm++;render()}
 function selDate(date){S.sel=date;S.dv=true;render();document.getElementById('scroll').scrollTop=0}
 function backFromDay(){S.dv=false;render()}
-function toggleCheck(date,id){S.c[date]=S.c[date]||{};S.c[date][id]=!S.c[date][id];save();if(S.c[date][id]&&navigator.vibrate)navigator.vibrate(10);render()}
+function toggleCheck(date,id){
+  S.c[date]=S.c[date]||{};
+  const wasOff=!S.c[date][id];
+  S.c[date][id]=!S.c[date][id];
+  save();
+  if(wasOff){
+    if(navigator.vibrate)navigator.vibrate(10);
+    // Check if all tasks done = perfect day
+    const all=allT(),ch=S.c[date]||{};
+    const done=all.filter(t=>ch[t.id]).length;
+    if(done===all.length&&all.length>0){
+      showTaskComplete();
+      setTimeout(()=>showStreakCelebration(streak()),800);
+    }
+  }
+  render();
+}
 function toggleRew(date){S.rw[date]=!S.rw[date];save();render()}
 function toggleEx(date){S.ex[date]=!S.ex[date];save();render()}
 function addXtra(date){const l=prompt('Task name:');if(l?.trim()){S.xt[date]=S.xt[date]||[];S.xt[date].push({id:Date.now(),l:l.trim(),done:false});save();render()}}
@@ -1682,6 +1792,226 @@ function logFoodEntry(){
 function delFoodEntry(date,i){S.food[date].splice(i,1);save();render()}
 
 // ═══════════════════════════════════════
+// ONBOARDING
+// ═══════════════════════════════════════
+let onbStep=0;
+function renderOnboarding(){
+  const steps=[
+    {
+      icon:'🌿',
+      title:'Welcome to W·OS',
+      sub:'Your personal wellness operating system',
+      content:`<div style="text-align:center;padding:0 8px">
+        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:24px">Built by <span style="color:var(--ac);font-weight:800">Anant Raj Saini</span><br/>Track mood, sleep, food, fitness & more.</div>
+        <button class="btn btn-ac btn-full" onclick="nextOnb()">Get Started →</button>
+      </div>`
+    },
+    {
+      icon:'👤',
+      title:'Tell us about you',
+      sub:'For personalized goals',
+      content:`<div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+          <div><div class="lbl" style="margin-bottom:5px">Height (cm)</div><input id="onb-h" type="number" class="binp" placeholder="170" value="${S.body?.h||''}"/></div>
+          <div><div class="lbl" style="margin-bottom:5px">Weight (kg)</div><input id="onb-w" type="number" class="binp" placeholder="70" value="${S.body?.cw||''}"/></div>
+          <div><div class="lbl" style="margin-bottom:5px">Goal (kg)</div><input id="onb-g" type="number" class="binp" placeholder="65" value="${S.body?.gw||''}"/></div>
+          <div><div class="lbl" style="margin-bottom:5px">Age</div><input id="onb-age" type="number" class="binp" placeholder="22"/></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <button id="onb-male" onclick="onbSex('male')" class="btn ${S.body?.sex==='female'?'btn-ghost':'btn-ac'}" style="flex:1">♂ Male</button>
+          <button id="onb-fem" onclick="onbSex('female')" class="btn ${S.body?.sex==='female'?'btn-ac':'btn-ghost'}" style="flex:1">♀ Female</button>
+        </div>
+        <button class="btn btn-ac btn-full" onclick="saveOnbBody()">Continue →</button>
+      </div>`
+    },
+    {
+      icon:'🎯',
+      title:'Activity level',
+      sub:'Helps calculate your calorie goal',
+      content:`<div>
+        ${[['sedentary','🪑 Sedentary','Desk job, little exercise'],['light','🚶 Light','1-2x per week'],['moderate','🏃 Moderate','3-5x per week'],['active','💪 Active','6-7x per week'],['athlete','⚡ Athlete','2x per day']].map(([k,l,s])=>`
+        <div onclick="onbAct('${k}')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-radius:var(--r12);border:1px solid ${S.body?.act===k?'var(--ac)50':'var(--ln)'};background:${S.body?.act===k?'var(--ac)0c':'transparent'};cursor:pointer;margin-bottom:8px;transition:all .15s">
+          <span style="font-size:20px">${l.split(' ')[0]}</span>
+          <div><div style="font-size:13px;font-weight:700">${l.slice(l.indexOf(' ')+1)}</div><div style="font-size:11px;color:var(--t3)">${s}</div></div>
+          ${S.body?.act===k?'<span style="margin-left:auto;color:var(--ac);font-size:16px">✓</span>':''}
+        </div>`).join('')}
+        <button class="btn btn-ac btn-full" style="margin-top:8px" onclick="nextOnb()">Continue →</button>
+      </div>`
+    },
+    {
+      icon:'✅',
+      title:"You're all set!",
+      sub:'Your wellness journey starts now',
+      content:`<div style="text-align:center">
+        <div style="font-size:13px;color:var(--t2);line-height:1.8;margin-bottom:20px">Goals calculated based on your profile.<br/>Log your first task to start your streak!</div>
+        <div style="background:var(--p3);border:1px solid var(--ln);border-radius:var(--r12);padding:14px;margin-bottom:20px;text-align:left">
+          ${S.body?.cw&&S.body?.h?`<div style="font-size:12px;color:var(--t2);margin-bottom:4px">📊 Your calorie goal: <span style="color:var(--ac);font-weight:800">${Math.max(1200,calcBodyGoals(S.body).targetCal)} kcal</span></div>`:''}
+          <div style="font-size:12px;color:var(--t2);margin-bottom:4px">💧 Water goal: <span style="color:var(--blue);font-weight:800">${S.wgoal||2}L / day</span></div>
+          <div style="font-size:12px;color:var(--t2)">🌙 Sleep goal: <span style="color:var(--purple);font-weight:800">${S.slgoal||8}h / night</span></div>
+        </div>
+        <button class="btn btn-ac btn-full" onclick="finishOnb()">Start W·OS 🌿</button>
+      </div>`
+    }
+  ];
+
+  const step=steps[Math.min(onbStep,steps.length-1)];
+  const app=document.getElementById('app');
+  let el=document.getElementById('onb-screen');
+  if(!el){
+    el=document.createElement('div');el.id='onb-screen';
+    el.style.cssText='position:fixed;inset:0;z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;background:var(--bg)';
+    app.appendChild(el);
+  }
+  el.innerHTML=`
+    <div style="width:100%;max-width:360px">
+      <!-- Progress dots -->
+      <div style="display:flex;justify-content:center;gap:6px;margin-bottom:32px">
+        ${steps.map((_,i)=>`<div style="width:${i===onbStep?24:8}px;height:8px;border-radius:4px;background:${i===onbStep?'var(--ac)':i<onbStep?'var(--ac)50':'var(--ln)'};transition:all .3s var(--ease)"></div>`).join('')}
+      </div>
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:52px;margin-bottom:12px">${step.icon}</div>
+        <div style="font-family:'Fraunces',serif;font-size:28px;font-weight:300;font-style:italic;color:var(--t);margin-bottom:6px">${step.title}</div>
+        <div style="font-size:12px;color:var(--t3)">${step.sub}</div>
+      </div>
+      ${step.content}
+    </div>`;
+  applyTheme();
+}
+
+function nextOnb(){onbStep++;renderOnboarding()}
+function onbSex(sex){S.body=S.body||{};S.body.sex=sex;renderOnboarding()}
+function onbAct(act){S.body=S.body||{};S.body.act=act;save();renderOnboarding()}
+function saveOnbBody(){
+  const h=parseInt(document.getElementById('onb-h')?.value)||170;
+  const cw=parseFloat(document.getElementById('onb-w')?.value)||70;
+  const gw=parseFloat(document.getElementById('onb-g')?.value)||65;
+  S.body={...S.body,h,cw,gw,wks:12,sex:S.body?.sex||'male',act:S.body?.act||'moderate'};
+  const goals=calcBodyGoals(S.body);
+  S.calgoal=Math.max(1200,goals.targetCal);
+  save();nextOnb();
+}
+function finishOnb(){
+  S.onboarded=true;save();
+  document.getElementById('onb-screen')?.remove();
+  render();
+}
+
+// ═══════════════════════════════════════
+// STREAK ANIMATIONS
+// ═══════════════════════════════════════
+function showStreakCelebration(str){
+  if(str<1)return;
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;pointer-events:none';
+  el.innerHTML=`
+    <div style="text-align:center;animation:streakPop .6s var(--spring) forwards">
+      <div style="font-size:64px;margin-bottom:8px">${str>=30?'🏆':str>=7?'🔥':'✨'}</div>
+      <div style="font-family:'Fraunces',serif;font-size:42px;font-weight:300;font-style:italic;color:var(--ac);line-height:1">${str}</div>
+      <div style="font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin-top:4px">Day Streak!</div>
+    </div>`;
+  document.body.appendChild(el);
+  const style=document.createElement('style');
+  style.textContent='@keyframes streakPop{from{opacity:0;transform:scale(.5) translateY(20px)}60%{transform:scale(1.15) translateY(-5px)}to{opacity:1;transform:scale(1) translateY(0)}}';
+  document.head.appendChild(style);
+  setTimeout(()=>el.remove(),2500);
+}
+
+function showTaskComplete(){
+  const confetti=document.createElement('div');
+  confetti.style.cssText='position:fixed;inset:0;z-index:490;pointer-events:none;overflow:hidden';
+  const colors=['var(--ac)','var(--green)','var(--blue)','var(--purple)'];
+  confetti.innerHTML=Array.from({length:20},(_,i)=>{
+    const c=colors[i%colors.length];
+    const x=Math.random()*100,d=Math.random()*2+.5,del=Math.random()*.5;
+    return`<div style="position:absolute;top:-10px;left:${x}%;width:6px;height:6px;border-radius:50%;background:${c};animation:fall ${d}s ${del}s linear forwards"></div>`;
+  }).join('');
+  const style=document.createElement('style');
+  style.textContent='@keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}';
+  document.head.appendChild(style);
+  document.body.appendChild(confetti);
+  setTimeout(()=>confetti.remove(),3000);
+}
+
+// ═══════════════════════════════════════
+// PDF HEALTH REPORT
+// ═══════════════════════════════════════
+function generatePDFReport(){
+  const l30=last(30);
+  const str=streak();
+  const avg=Math.round(l30.reduce((a,d)=>a+eff(d),0)/30);
+  const perfect=l30.filter(d=>eff(d)===100).length;
+  const totalFoodDays=Object.keys(S.food||{}).length;
+  const totalWorkouts=Object.values(S.fitLog||{}).reduce((a,d)=>a+d.length,0);
+  const goals=S.body?calcBodyGoals(S.body):{};
+
+  const html=`<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"/><title>W·OS Health Report</title>
+<style>
+  body{font-family:'Cabinet Grotesk',Georgia,sans-serif;margin:0;padding:32px;color:#1a1510;background:#faf6f0}
+  .header{text-align:center;margin-bottom:32px;padding-bottom:24px;border-bottom:2px solid #e8d5a3}
+  .logo{font-family:Georgia,serif;font-size:48px;font-style:italic;color:#8a6840;letter-spacing:-2px}
+  .subtitle{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#a89878;margin-top:4px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}
+  .card{background:#fff;border:1px solid #e8e0d0;border-radius:12px;padding:16px}
+  .val{font-family:Georgia,serif;font-size:36px;font-style:italic;color:#8a6840;line-height:1}
+  .lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#a89878;margin-top:4px}
+  .section{margin:24px 0}
+  h2{font-family:Georgia,serif;font-size:18px;font-style:italic;color:#5a4a38;border-bottom:1px solid #e8e0d0;padding-bottom:8px}
+  .row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f0e8d8;font-size:13px}
+  .footer{text-align:center;margin-top:32px;font-size:11px;color:#a89878;padding-top:16px;border-top:1px solid #e8e0d0}
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">W·OS</div>
+    <div class="subtitle">Health Report · ${new Date().toLocaleDateString('en-IN',{month:'long',year:'numeric'})}</div>
+    <div style="font-size:12px;color:#a89878;margin-top:8px">Generated for Anant Raj Saini</div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="val">${str}</div><div class="lbl">Day Streak 🔥</div></div>
+    <div class="card"><div class="val">${avg}%</div><div class="lbl">30-Day Average</div></div>
+    <div class="card"><div class="val">${perfect}</div><div class="lbl">Perfect Days ⭐</div></div>
+    <div class="card"><div class="val">${totalWorkouts}</div><div class="lbl">Total Workouts</div></div>
+  </div>
+
+  <div class="section">
+    <h2>Body & Goals</h2>
+    ${S.body?`
+    <div class="row"><span>Current Weight</span><span><b>${S.body.cw} kg</b></span></div>
+    <div class="row"><span>Goal Weight</span><span><b>${S.body.gw} kg</b></span></div>
+    <div class="row"><span>BMI</span><span><b>${goals.bmi} — ${goals.bmiCat}</b></span></div>
+    <div class="row"><span>BMR</span><span><b>${goals.bmr} kcal</b></span></div>
+    <div class="row"><span>TDEE</span><span><b>${goals.tdee} kcal</b></span></div>
+    <div class="row"><span>Daily Target</span><span><b>${goals.targetCal} kcal</b></span></div>
+    `:'<p style="color:#a89878">No body data set yet.</p>'}
+  </div>
+
+  <div class="section">
+    <h2>30-Day Activity</h2>
+    ${l30.slice(-14).map(d=>`<div class="row"><span>${d}</span><span style="color:${eff(d)>=70?'#5db87a':eff(d)>=40?'#8a6840':'#e05a48'}"><b>${eff(d)}%</b></span></div>`).join('')}
+  </div>
+
+  <div class="section">
+    <h2>Food Summary</h2>
+    <div class="row"><span>Days with food logged</span><span><b>${totalFoodDays} days</b></span></div>
+    <div class="row"><span>Daily calorie goal</span><span><b>${S.calgoal||goals.targetCal||'—'} kcal</b></span></div>
+    <div class="row"><span>Water goal</span><span><b>${S.wgoal||2}L / day</b></span></div>
+  </div>
+
+  <div class="footer">W·OS · Made with ❤️ by Anant Raj Saini · Powered by Claude AI</div>
+</body>
+</html>`;
+
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`wos-report-${today()}.html`;
+  a.click();
+}
+
+// ═══════════════════════════════════════
 // FITNESS TAB
 // ═══════════════════════════════════════
 const EXLIB={
@@ -1695,6 +2025,34 @@ const EXLIB={
 };
 let restInterval=null;
 
+function getExerciseHistory(name){
+  // Returns last 5 sessions with this exercise
+  const history=[];
+  const allDates=Object.keys(S.fitLog||{}).sort().reverse();
+  for(const date of allDates){
+    const ex=(S.fitLog[date]||[]).find(e=>e.name===name);
+    if(ex)history.push({date,sets:ex.sets,unit:ex.unit});
+    if(history.length>=5)break;
+  }
+  return history;
+}
+
+function getPersonalRecord(name){
+  let maxVol=0,maxWeight=0;
+  Object.values(S.fitLog||{}).forEach(day=>{
+    day.forEach(ex=>{
+      if(ex.name===name){
+        ex.sets.forEach(s=>{
+          if(s.weight>maxWeight)maxWeight=s.weight;
+          const vol=s.reps*s.weight;
+          if(vol>maxVol)maxVol=vol;
+        });
+      }
+    });
+  });
+  return{maxWeight,maxVol};
+}
+
 function buildFitness(){
   const td=today();
   const body=S.body||{};
@@ -1702,18 +2060,28 @@ function buildFitness(){
   const totalSets=todayFit.reduce((a,e)=>a+e.sets.length,0);
   const totalVol=todayFit.reduce((a,e)=>a+e.sets.reduce((b,s)=>b+(s.reps||0)*(s.weight||0),0),0);
 
+  // Weekly volume by muscle group
+  const weekDates=last(7);
+  const weekSets=weekDates.reduce((a,d)=>a+((S.fitLog||{})[d]||[]).reduce((b,e)=>b+e.sets.length,0),0);
+
   return `
   <div style="padding:20px 16px 0">
     <div class="lbl" style="margin-bottom:16px;color:var(--green)">Fitness</div>
 
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
-      ${[['Weight',body.cw?body.cw+'kg':'—'],['Sets today',totalSets+''],['Volume',totalVol>0?Math.round(totalVol/1000)+'k':'—']].map(([l,v])=>`
-      <div class="stile" style="text-align:center">
-        <div class="sval" style="font-size:22px">${v}</div>
-        <div class="slbl">${l}</div>
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+      ${[
+        ['Weight',body.cw?body.cw+'kg':'—'],
+        ['Today',totalSets+' sets'],
+        ['Volume',totalVol>0?Math.round(totalVol/1000)+'k':'0'],
+        ['Week',weekSets+' sets'],
+      ].map(([l,v])=>`<div style="background:var(--p2);border:1px solid var(--ln);border-radius:var(--r12);padding:11px 4px;text-align:center">
+        <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:var(--green)">${v}</div>
+        <div style="font-size:7px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-top:2px">${l}</div>
       </div>`).join('')}
     </div>
 
+    <!-- Today's workout -->
     <div class="card rev" style="margin:0 0 10px">
       <div class="card-head">
         <div>
@@ -1724,18 +2092,32 @@ function buildFitness(){
       </div>
       ${todayFit.length===0
         ?`<div style="padding:28px;text-align:center"><div style="font-size:32px;margin-bottom:8px">💪</div><div style="font-size:12px;color:var(--t3)">No exercises yet — tap + Add!</div></div>`
-        :todayFit.map((ex,i)=>`<div style="padding:12px 16px;border-top:1px solid var(--ln)">
+        :todayFit.map((ex,i)=>{
+          const pr=getPersonalRecord(ex.name);
+          const hist=getExerciseHistory(ex.name);
+          const prevSession=hist.find(h=>h.date!==td);
+          const prevMax=prevSession?Math.max(...prevSession.sets.map(s=>s.weight)):0;
+          const todayMax=Math.max(...ex.sets.map(s=>s.weight));
+          const isPR=todayMax>pr.maxWeight&&pr.maxWeight>0;
+          const isImproved=prevMax>0&&todayMax>prevMax;
+          return`<div style="padding:12px 16px;border-top:1px solid var(--ln)">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div style="font-size:14px;font-weight:800">${ex.name}</div>
+            <div>
+              <span style="font-size:14px;font-weight:800">${ex.name}</span>
+              ${isPR?`<span style="font-size:9px;font-weight:800;color:var(--ac);background:var(--ac)18;border-radius:20px;padding:2px 8px;margin-left:6px">🏆 PR!</span>`:''}
+              ${isImproved&&!isPR?`<span style="font-size:9px;font-weight:800;color:var(--green);background:var(--green)18;border-radius:20px;padding:2px 8px;margin-left:6px">↑ improved</span>`:''}
+            </div>
             <button onclick="delExercise('${td}',${i})" style="background:none;border:none;color:var(--red);font-size:20px;cursor:pointer;line-height:1">×</button>
           </div>
+          ${prevSession?`<div style="font-size:10px;color:var(--t3);margin-bottom:6px">Last time: ${prevSession.sets.map(s=>`${s.reps}×${s.weight}`).join(', ')} ${ex.unit}</div>`:''}
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             ${ex.sets.map((s,si)=>`<div style="background:var(--p3);border:1px solid var(--ln);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--t2)">S${si+1} · ${s.reps}×${s.weight}${ex.unit}</div>`).join('')}
             <div onclick="addSet('${td}',${i})" style="background:var(--ac)12;border:1px dashed var(--ac)40;border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--ac);cursor:pointer">+ Set</div>
           </div>
-        </div>`).join('')}
+        </div>`;}).join('')}
     </div>
 
+    <!-- Rest Timer -->
     <div class="card rev" style="margin:0 0 10px">
       <div class="card-head">
         <div class="lbl" style="color:var(--blue)">Rest Timer</div>
@@ -1747,13 +2129,18 @@ function buildFitness(){
       </div>
     </div>
 
+    <!-- Exercise Library -->
     <div class="lbl" style="margin-bottom:8px">Exercise Library</div>
     <div class="card rev" style="margin:0 0 20px">
       ${Object.entries(EXLIB).map(([cat,exs],i)=>`
       <div style="${i>0?'border-top:1px solid var(--ln)':''}padding:12px 16px">
-        <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--ac);margin-bottom:8px">${cat}</div>
+        <div style="font-size:8px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:8px">${cat}</div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${exs.map(e=>`<div onclick="quickAddExercise('${e}')" style="background:var(--p3);border:1px solid var(--ln);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer">${e}</div>`).join('')}
+          ${exs.map(e=>{
+            const pr=getPersonalRecord(e);
+            return`<div onclick="quickAddExercise('${e}')" style="background:var(--p3);border:1px solid var(--ln);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;color:var(--t2);cursor:pointer">
+              ${e}${pr.maxWeight>0?`<span style="font-size:9px;color:var(--t3);margin-left:4px">${pr.maxWeight}kg</span>`:''}
+            </div>`;}).join('')}
         </div>
       </div>`).join('')}
     </div>
