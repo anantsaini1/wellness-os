@@ -492,7 +492,227 @@ const FOOD_DB=[
   {n:'Gulab Jamun',        cat:'Sweet',   cal:175,p:3,  c:32, f:4.5,unit:'pc', std:60},
   {n:'Rasgulla',           cat:'Sweet',   cal:107,p:2.5,c:22, f:1.5,unit:'pc', std:70},
   {n:'Halwa (suji)',       cat:'Sweet',   cal:290,p:4,  c:44, f:11, unit:'g',  std:100},
+  {n:'Kheer',              cat:'Sweet',   cal:150,p:4,  c:25, f:4,  unit:'g',  std:100},
+  {n:'Jalebi',             cat:'Sweet',   cal:370,p:2,  c:65, f:11, unit:'pc', std:60},
+  {n:'Ladoo (besan)',      cat:'Sweet',   cal:410,p:8,  c:55, f:18, unit:'pc', std:60},
+  {n:'Barfi (milk)',       cat:'Sweet',   cal:370,p:9,  c:58, f:12, unit:'pc', std:40},
+  {n:'Chocolate (dark)',   cat:'Sweet',   cal:546,p:5,  c:60, f:31, unit:'g',  std:30},
+  {n:'Chocolate (milk)',   cat:'Sweet',   cal:535,p:7,  c:59, f:30, unit:'g',  std:30},
+  {n:'Ice Cream (vanilla)',cat:'Sweet',   cal:207,p:3.5,c:24, f:11, unit:'scoop',std:1},
+  {n:'Kulfi',              cat:'Sweet',   cal:175,p:4,  c:22, f:8,  unit:'pc', std:80},
+  // NUTS & SEEDS
+  {n:'Almonds (raw)',      cat:'Nuts',    cal:579,p:21, c:22, f:50, unit:'g',  std:30},
+  {n:'Walnuts',            cat:'Nuts',    cal:654,p:15, c:14, f:65, unit:'g',  std:30},
+  {n:'Cashews',            cat:'Nuts',    cal:553,p:18, c:30, f:44, unit:'g',  std:30},
+  {n:'Pistachios',         cat:'Nuts',    cal:562,p:20, c:28, f:45, unit:'g',  std:30},
+  {n:'Peanuts (raw)',      cat:'Nuts',    cal:567,p:26, c:16, f:49, unit:'g',  std:30},
+  {n:'Peanut Butter',      cat:'Nuts',    cal:588,p:25, c:20, f:50, unit:'g',  std:30},
+  {n:'Hazelnuts',          cat:'Nuts',    cal:628,p:15, c:17, f:61, unit:'g',  std:30},
+  {n:'Macadamia Nuts',     cat:'Nuts',    cal:718,p:8,  c:14, f:76, unit:'g',  std:30},
+  {n:'Brazil Nuts',        cat:'Nuts',    cal:659,p:14, c:12, f:67, unit:'g',  std:30},
+  {n:'Pecans',             cat:'Nuts',    cal:691,p:9,  c:14, f:72, unit:'g',  std:30},
+  {n:'Pine Nuts',          cat:'Nuts',    cal:673,p:14, c:13, f:68, unit:'g',  std:30},
+  {n:'Mixed Nuts',         cat:'Nuts',    cal:607,p:17, c:21, f:54, unit:'g',  std:30},
+  {n:'Chia Seeds',         cat:'Seeds',   cal:486,p:17, c:42, f:31, unit:'g',  std:15},
+  {n:'Flaxseeds',          cat:'Seeds',   cal:534,p:18, c:29, f:42, unit:'g',  std:15},
+  {n:'Hemp Seeds',         cat:'Seeds',   cal:553,p:32, c:9,  f:49, unit:'g',  std:15},
+  {n:'Sunflower Seeds',    cat:'Seeds',   cal:584,p:21, c:20, f:51, unit:'g',  std:30},
+  {n:'Pumpkin Seeds',      cat:'Seeds',   cal:559,p:30, c:11, f:49, unit:'g',  std:30},
+  {n:'Sesame Seeds',       cat:'Seeds',   cal:573,p:18, c:23, f:50, unit:'g',  std:15},
+  {n:'Poppy Seeds',        cat:'Seeds',   cal:525,p:18, c:28, f:42, unit:'g',  std:15},
+  {n:'Watermelon Seeds',   cat:'Seeds',   cal:557,p:28, c:15, f:47, unit:'g',  std:30},
+  {n:'Melon Seeds',        cat:'Seeds',   cal:500,p:28, c:15, f:45, unit:'g',  std:30},
+  // VEGETABLES (expanded)
+  {n:'Broccoli',           cat:'Veggie',  cal:34, p:2.8,c:7,  f:0.4,unit:'g',  std:100},
+  {n:'Cucumber',           cat:'Veggie',  cal:16, p:0.7,c:3.6,f:0.1,unit:'g',  std:100},
+  {n:'Cabbage',            cat:'Veggie',  cal:25, p:1.3,c:6,  f:0.1,unit:'g',  std:100},
+  {n:'Mushroom',           cat:'Veggie',  cal:22, p:3.1,c:3.3,f:0.3,unit:'g',  std:100},
+  {n:'Beetroot',           cat:'Veggie',  cal:43, p:1.6,c:10, f:0.2,unit:'g',  std:100},
+  {n:'Sweet Potato',       cat:'Veggie',  cal:86, p:1.6,c:20, f:0.1,unit:'g',  std:100},
+  {n:'Corn (boiled)',      cat:'Veggie',  cal:96, p:3.4,c:21, f:1.5,unit:'g',  std:100},
+  {n:'Capsicum (red)',     cat:'Veggie',  cal:31, p:1,  c:6,  f:0.3,unit:'g',  std:100},
+  {n:'Zucchini',           cat:'Veggie',  cal:17, p:1.2,c:3.1,f:0.3,unit:'g',  std:100},
+  {n:'Celery',             cat:'Veggie',  cal:16, p:0.7,c:3,  f:0.2,unit:'g',  std:100},
+  {n:'Asparagus',          cat:'Veggie',  cal:20, p:2.2,c:3.9,f:0.1,unit:'g',  std:100},
+  {n:'Kale',               cat:'Veggie',  cal:49, p:4.3,c:9,  f:0.9,unit:'g',  std:100},
+  {n:'Lettuce',            cat:'Veggie',  cal:15, p:1.4,c:2.9,f:0.2,unit:'g',  std:100},
+  {n:'Spring Onion',       cat:'Veggie',  cal:32, p:1.8,c:7.3,f:0.2,unit:'g',  std:100},
+  {n:'Ginger',             cat:'Veggie',  cal:80, p:1.8,c:18, f:0.8,unit:'g',  std:10},
+  {n:'Garlic',             cat:'Veggie',  cal:149,p:6.4,c:33, f:0.5,unit:'g',  std:10},
+  // FRUITS (expanded)
+  {n:'Strawberry',         cat:'Fruit',   cal:32, p:0.7,c:7.7,f:0.3,unit:'g',  std:100},
+  {n:'Blueberry',          cat:'Fruit',   cal:57, p:0.7,c:14, f:0.3,unit:'g',  std:100},
+  {n:'Papaya',             cat:'Fruit',   cal:43, p:0.5,c:11, f:0.3,unit:'g',  std:100},
+  {n:'Pineapple',          cat:'Fruit',   cal:50, p:0.5,c:13, f:0.1,unit:'g',  std:100},
+  {n:'Guava',              cat:'Fruit',   cal:68, p:2.6,c:14, f:1,  unit:'pc', std:100},
+  {n:'Pomegranate',        cat:'Fruit',   cal:83, p:1.7,c:19, f:1.2,unit:'g',  std:100},
+  {n:'Kiwi',               cat:'Fruit',   cal:61, p:1.1,c:15, f:0.5,unit:'pc', std:80},
+  {n:'Avocado',            cat:'Fruit',   cal:160,p:2,  c:9,  f:15, unit:'pc', std:150},
+  {n:'Coconut (fresh)',    cat:'Fruit',   cal:354,p:3.3,c:15, f:33, unit:'g',  std:50},
+  {n:'Lychee',             cat:'Fruit',   cal:66, p:0.8,c:17, f:0.4,unit:'g',  std:100},
+  {n:'Chikoo (sapota)',    cat:'Fruit',   cal:83, p:0.4,c:20, f:1.1,unit:'pc', std:100},
+  {n:'Dates',              cat:'Fruit',   cal:282,p:2.5,c:75, f:0.4,unit:'pc', std:24},
+  {n:'Fig (fresh)',        cat:'Fruit',   cal:74, p:0.8,c:19, f:0.3,unit:'pc', std:50},
+  {n:'Pear',               cat:'Fruit',   cal:57, p:0.4,c:15, f:0.1,unit:'pc', std:180},
+  {n:'Plum',               cat:'Fruit',   cal:46, p:0.7,c:11, f:0.3,unit:'pc', std:66},
+  {n:'Peach',              cat:'Fruit',   cal:39, p:0.9,c:10, f:0.3,unit:'pc', std:150},
+  // MEATS & FISH (expanded)
+  {n:'Salmon',             cat:'NonVeg',  cal:208,p:20, c:0,  f:13, unit:'g',  std:100},
+  {n:'Sardines',           cat:'NonVeg',  cal:208,p:25, c:0,  f:11, unit:'g',  std:100},
+  {n:'Prawns / Shrimp',    cat:'NonVeg',  cal:99, p:24, c:0.2,f:0.3,unit:'g',  std:100},
+  {n:'Chicken Legs',       cat:'NonVeg',  cal:184,p:19, c:0,  f:11, unit:'pc', std:100},
+  {n:'Chicken Wings',      cat:'NonVeg',  cal:203,p:18, c:0,  f:14, unit:'pc', std:60},
+  {n:'Boiled Chicken',     cat:'NonVeg',  cal:150,p:27, c:0,  f:4,  unit:'g',  std:100},
+  {n:'Lamb (cooked)',      cat:'NonVeg',  cal:258,p:26, c:0,  f:17, unit:'g',  std:100},
+  {n:'Beef (lean)',        cat:'NonVeg',  cal:215,p:26, c:0,  f:12, unit:'g',  std:100},
+  {n:'Pork (lean)',        cat:'NonVeg',  cal:242,p:27, c:0,  f:14, unit:'g',  std:100},
+  {n:'Turkey (breast)',    cat:'NonVeg',  cal:135,p:30, c:0,  f:1,  unit:'g',  std:100},
+  {n:'Crab',               cat:'NonVeg',  cal:97, p:19, c:0,  f:1.5,unit:'g',  std:100},
+  {n:'Paneer (raw)',       cat:'Dairy',   cal:265,p:18, c:1.2,f:20, unit:'g',  std:100},
+  // SUPPLEMENTS
+  {n:'Whey Protein',       cat:'Suppl',   cal:120,p:25, c:3,  f:1.5,unit:'scoop',std:1},
+  {n:'Casein Protein',     cat:'Suppl',   cal:110,p:24, c:3,  f:1,  unit:'scoop',std:1},
+  {n:'Mass Gainer',        cat:'Suppl',   cal:400,p:25, c:70, f:5,  unit:'scoop',std:1},
+  {n:'Creatine',           cat:'Suppl',   cal:0,  p:0,  c:0,  f:0,  unit:'g',  std:5},
+  {n:'BCAA',               cat:'Suppl',   cal:20, p:5,  c:0,  f:0,  unit:'scoop',std:1},
+  {n:'Pre-Workout',        cat:'Suppl',   cal:25, p:2,  c:4,  f:0,  unit:'scoop',std:1},
+  {n:'Pea Protein',        cat:'Suppl',   cal:100,p:21, c:2,  f:1.5,unit:'scoop',std:1},
+  {n:'Fish Oil',           cat:'Suppl',   cal:45, p:0,  c:0,  f:5,  unit:'cap', std:1},
+  // BEVERAGES (expanded)
+  {n:'Green Tea',          cat:'Drink',   cal:2,  p:0.2,c:0.3,f:0,  unit:'cup',std:1},
+  {n:'Black Tea',          cat:'Drink',   cal:2,  p:0.1,c:0.5,f:0,  unit:'cup',std:1},
+  {n:'Coconut Water',      cat:'Drink',   cal:19, p:0.7,c:3.7,f:0.2,unit:'ml', std:100},
+  {n:'Orange Juice',       cat:'Drink',   cal:45, p:0.7,c:10, f:0.2,unit:'ml', std:200},
+  {n:'Apple Juice',        cat:'Drink',   cal:46, p:0.1,c:11, f:0.1,unit:'ml', std:200},
+  {n:'Milk (skimmed)',     cat:'Drink',   cal:35, p:3.4,c:5,  f:0.1,unit:'ml', std:200},
+  {n:'Almond Milk',        cat:'Drink',   cal:17, p:0.6,c:1.5,f:1.1,unit:'ml', std:200},
+  {n:'Soy Milk',           cat:'Drink',   cal:54, p:3.3,c:6,  f:1.8,unit:'ml', std:200},
+  {n:'Oat Milk',           cat:'Drink',   cal:50, p:1.3,c:9,  f:1.5,unit:'ml', std:200},
+  {n:'Mango Lassi',        cat:'Drink',   cal:180,p:5,  c:30, f:4,  unit:'glass',std:1},
+  {n:'Buttermilk (chaas)', cat:'Drink',   cal:40, p:3,  c:5,  f:0.9,unit:'glass',std:1},
+  {n:'Energy Drink',       cat:'Drink',   cal:45, p:0,  c:11, f:0,  unit:'can',std:1},
+  {n:'Sports Drink',       cat:'Drink',   cal:30, p:0,  c:7.5,f:0,  unit:'ml', std:200},
+  // FAST FOOD (expanded)
+  {n:'Maggi Noodles',      cat:'FastFood',cal:385,p:10, c:57, f:13, unit:'pkt',std:1},
+  {n:'Maggi Masala',       cat:'FastFood',cal:385,p:10, c:57, f:13, unit:'pkt',std:1},
+  {n:'Cup Noodles',        cat:'FastFood',cal:300,p:7,  c:42, f:12, unit:'cup',std:1},
+  {n:'Atta Noodles',       cat:'FastFood',cal:350,p:11, c:55, f:10, unit:'pkt',std:1},
+  {n:'Vada Pav',           cat:'FastFood',cal:290,p:6,  c:42, f:11, unit:'pc', std:1},
+  {n:'Pav Bhaji',          cat:'FastFood',cal:280,p:7,  c:42, f:9,  unit:'srv',std:1},
+  {n:'Dahi Puri',          cat:'FastFood',cal:200,p:5,  c:32, f:6,  unit:'srv',std:1},
+  {n:'Bhel Puri',          cat:'FastFood',cal:180,p:4,  c:32, f:5,  unit:'srv',std:1},
+  {n:'Sev Puri',           cat:'FastFood',cal:210,p:5,  c:35, f:7,  unit:'srv',std:1},
+  {n:'Dosa (masala)',      cat:'FastFood',cal:215,p:5,  c:35, f:6,  unit:'pc', std:1},
+  {n:'Uttapam',            cat:'FastFood',cal:200,p:6,  c:35, f:5,  unit:'pc', std:1},
+  {n:'Dhokla',             cat:'FastFood',cal:160,p:6,  c:28, f:3,  unit:'pc', std:60},
+  {n:'Kachori',            cat:'FastFood',cal:280,p:5,  c:35, f:14, unit:'pc', std:80},
+  {n:'Aloo Tikki',         cat:'FastFood',cal:220,p:4,  c:30, f:10, unit:'pc', std:80},
+  {n:'Chaat',              cat:'FastFood',cal:180,p:5,  c:28, f:6,  unit:'srv',std:1},
+  {n:'Hot Dog',            cat:'FastFood',cal:290,p:11, c:24, f:16, unit:'pc', std:1},
+  {n:'Fried Chicken',      cat:'FastFood',cal:320,p:19, c:18, f:20, unit:'pc', std:100},
+  {n:'Fish & Chips',       cat:'FastFood',cal:400,p:18, c:40, f:18, unit:'srv',std:1},
+  {n:'Spring Roll',        cat:'FastFood',cal:160,p:3,  c:22, f:7,  unit:'pc', std:80},
+  {n:'Wontons',            cat:'FastFood',cal:120,p:6,  c:18, f:3,  unit:'pc', std:50},
+  // BAKERY
+  {n:'Croissant',          cat:'Bakery',  cal:406,p:8,  c:45, f:21, unit:'pc', std:80},
+  {n:'Muffin (blueberry)', cat:'Bakery',  cal:426,p:6,  c:60, f:18, unit:'pc', std:130},
+  {n:'Brownie',            cat:'Bakery',  cal:466,p:5,  c:64, f:22, unit:'pc', std:60},
+  {n:'Cookie',             cat:'Bakery',  cal:488,p:5,  c:64, f:23, unit:'pc', std:30},
+  {n:'Cake (chocolate)',   cat:'Bakery',  cal:371,p:5,  c:53, f:17, unit:'pc', std:100},
+  {n:'Donut (glazed)',     cat:'Bakery',  cal:452,p:5,  c:51, f:25, unit:'pc', std:80},
+  {n:'Bagel',              cat:'Bakery',  cal:245,p:9,  c:47, f:1.5,unit:'pc', std:100},
+  {n:'Pita Bread',         cat:'Bakery',  cal:275,p:9,  c:55, f:1.2,unit:'pc', std:60},
+  {n:'Tortilla (wheat)',   cat:'Bakery',  cal:218,p:6,  c:38, f:5,  unit:'pc', std:45},
+  // CONDIMENTS & SAUCES
+  {n:'Tomato Ketchup',     cat:'Sauce',   cal:101,p:1.3,c:26, f:0.1,unit:'g',  std:15},
+  {n:'Mayonnaise',         cat:'Sauce',   cal:680,p:1,  c:0.6,f:75, unit:'g',  std:15},
+  {n:'Mustard Sauce',      cat:'Sauce',   cal:66, p:3.7,c:8,  f:3,  unit:'g',  std:10},
+  {n:'Soy Sauce',          cat:'Sauce',   cal:53, p:8.1,c:4.9,f:0.6,unit:'g',  std:10},
+  {n:'Olive Oil',          cat:'Sauce',   cal:884,p:0,  c:0,  f:100,unit:'g',  std:10},
+  {n:'Butter (salted)',    cat:'Sauce',   cal:717,p:0.9,c:0.1,f:81, unit:'g',  std:10},
+  {n:'Ghee',               cat:'Sauce',   cal:900,p:0,  c:0,  f:100,unit:'g',  std:10},
+  {n:'Honey',              cat:'Sauce',   cal:304,p:0.3,c:82, f:0,  unit:'g',  std:15},
+  {n:'Jam / Jelly',        cat:'Sauce',   cal:250,p:0.4,c:65, f:0.1,unit:'g',  std:20},
+  {n:'Cream Cheese',       cat:'Sauce',   cal:342,p:6,  c:4,  f:34, unit:'g',  std:30},
+  {n:'Hummus',             cat:'Sauce',   cal:166,p:8,  c:14, f:10, unit:'g',  std:50},
+  {n:'Pesto',              cat:'Sauce',   cal:407,p:9,  c:4,  f:40, unit:'g',  std:30},
+  // INTERNATIONAL
+  {n:'Sushi Roll (8pc)',   cat:'Intl',    cal:330,p:10, c:60, f:4,  unit:'srv',std:1},
+  {n:'Pad Thai',           cat:'Intl',    cal:400,p:15, c:54, f:14, unit:'srv',std:1},
+  {n:'Fried Rice',         cat:'Intl',    cal:238,p:5,  c:36, f:9,  unit:'g',  std:100},
+  {n:'Noodles (stir fry)', cat:'Intl',    cal:220,p:6,  c:35, f:6,  unit:'g',  std:100},
+  {n:'Dumplings (steamed)',cat:'Intl',    cal:160,p:8,  c:22, f:4,  unit:'srv',std:1},
+  {n:'Falafel',            cat:'Intl',    cal:333,p:13, c:32, f:17, unit:'pc', std:50},
+  {n:'Kebab (seekh)',      cat:'Intl',    cal:290,p:22, c:8,  f:19, unit:'pc', std:80},
+  {n:'Tikka (chicken)',    cat:'Intl',    cal:170,p:25, c:5,  f:6,  unit:'g',  std:100},
+  {n:'Lasagna',            cat:'Intl',    cal:290,p:16, c:28, f:13, unit:'g',  std:100},
+  {n:'Quiche',             cat:'Intl',    cal:330,p:12, c:20, f:23, unit:'pc', std:100},
+  // BREAKFAST ITEMS
+  {n:'Cornflakes',         cat:'Break',   cal:357,p:7,  c:84, f:0.4,unit:'g',  std:30},
+  {n:'Muesli',             cat:'Break',   cal:363,p:10, c:66, f:6,  unit:'g',  std:50},
+  {n:'Granola',            cat:'Break',   cal:471,p:10, c:64, f:20, unit:'g',  std:50},
+  {n:'Pancakes',           cat:'Break',   cal:227,p:6,  c:38, f:6,  unit:'pc', std:80},
+  {n:'Waffles',            cat:'Break',   cal:291,p:8,  c:37, f:14, unit:'pc', std:75},
+  {n:'French Toast',       cat:'Break',   cal:230,p:8,  c:26, f:11, unit:'pc', std:80},
+  {n:'Upma',               cat:'Break',   cal:160,p:4,  c:28, f:4,  unit:'g',  std:100},
+  {n:'Vermicelli (sewai)', cat:'Break',   cal:320,p:8,  c:64, f:3,  unit:'g',  std:100},
+  {n:'Daliya (broken wht)',cat:'Break',   cal:130,p:4,  c:27, f:0.5,unit:'g',  std:100},
+  {n:'Besan Chilla',       cat:'Break',   cal:200,p:9,  c:28, f:6,  unit:'pc', std:80},
+  // DAIRY (expanded)
+  {n:'Cottage Cheese',     cat:'Dairy',   cal:98, p:11, c:3.4,f:4.5,unit:'g',  std:100},
+  {n:'Mozzarella',         cat:'Dairy',   cal:280,p:28, c:2,  f:17, unit:'g',  std:30},
+  {n:'Cheddar Cheese',     cat:'Dairy',   cal:403,p:25, c:1.3,f:33, unit:'g',  std:30},
+  {n:'Parmesan',           cat:'Dairy',   cal:431,p:38, c:4,  f:29, unit:'g',  std:15},
+  {n:'Cream (heavy)',      cat:'Dairy',   cal:340,p:2.8,c:2.8,f:36, unit:'ml', std:30},
+  {n:'Sour Cream',         cat:'Dairy',   cal:193,p:2.1,c:4.6,f:19, unit:'g',  std:30},
+  {n:'Condensed Milk',     cat:'Dairy',   cal:321,p:8,  c:54, f:9,  unit:'g',  std:30},
+  {n:'Malai',              cat:'Dairy',   cal:350,p:2,  c:3,  f:35, unit:'g',  std:30},
+  {n:'Rabri',              cat:'Dairy',   cal:250,p:6,  c:35, f:10, unit:'g',  std:100},
+  // LEGUMES
+  {n:'Kidney Beans',       cat:'Legume',  cal:127,p:9,  c:22, f:0.5,unit:'g',  std:100},
+  {n:'Black Beans',        cat:'Legume',  cal:132,p:9,  c:24, f:0.5,unit:'g',  std:100},
+  {n:'Lentils (red)',      cat:'Legume',  cal:116,p:9,  c:20, f:0.4,unit:'g',  std:100},
+  {n:'Soybeans (cooked)',  cat:'Legume',  cal:173,p:17, c:10, f:9,  unit:'g',  std:100},
+  {n:'Edamame',            cat:'Legume',  cal:121,p:11, c:9,  f:5,  unit:'g',  std:100},
+  {n:'Green Moong',        cat:'Legume',  cal:105,p:7,  c:19, f:0.6,unit:'g',  std:100},
+  {n:'Kabuli Chana',       cat:'Legume',  cal:164,p:9,  c:27, f:2.6,unit:'g',  std:100},
 ];
+
+// ═══════════════════════════════════════
+// FUZZY SEARCH ENGINE
+// ═══════════════════════════════════════
+function fuzzyScore(query,target){
+  const q=query.toLowerCase().trim();
+  const t=target.toLowerCase();
+  if(t.includes(q))return 100;
+  // Check word by word
+  const words=q.split(' ');
+  if(words.every(w=>t.includes(w)))return 90;
+  // Levenshtein distance for typo tolerance
+  function lev(a,b){
+    const m=a.length,n=b.length;
+    const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+    for(let i=1;i<=m;i++)for(let j=1;j<=n;j++)
+      dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+    return dp[m][n];
+  }
+  // Check each word of query against each word of target
+  const tWords=t.split(/[\s\/\(\)]+/);
+  let best=999;
+  for(const qw of words){
+    if(qw.length<2)continue;
+    for(const tw of tWords){
+      if(tw.length<2)continue;
+      const d=lev(qw,tw);
+      const pct=d/Math.max(qw.length,tw.length);
+      if(pct<best)best=pct;
+    }
+  }
+  if(best<0.35)return Math.round((1-best)*70);
+  // Starts with check
+  if(t.startsWith(q.slice(0,3)))return 40;
+  return 0;
+}
 
 // ═══════════════════════════════════════
 // LOCALSTORAGE
@@ -1058,10 +1278,13 @@ function buildDay(){
 // ═══════════════════════════════════════
 let fSearch='',fSuggs=[],fPending=null;
 function searchFood(q){
-  if(!q||q.length<2)return[];
-  const ql=q.toLowerCase();
+  if(!q||q.length<1)return[];
   const all=[...FOOD_DB,...(S.cfoods||[]).map(f=>({...f,cat:'Custom'}))];
-  return all.filter(f=>f.n.toLowerCase().includes(ql)||(f.cat||'').toLowerCase().includes(ql)).slice(0,14);
+  const scored=all.map(f=>({f,score:fuzzyScore(q,f.n+(f.cat||''))}))
+    .filter(x=>x.score>0)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,20);
+  return scored.map(x=>x.f);
 }
 function getTodayFood(){return S.food[today()]||[]}
 function getFoodTotals(entries){return entries.reduce((a,e)=>({cal:a.cal+e.cal,p:a.p+e.p,c:a.c+e.c,f:a.f+e.f}),{cal:0,p:0,c:0,f:0})}
@@ -1587,13 +1810,22 @@ function delWeight(i){S.wlog.splice(i,1);save();render()}
 // FOOD ACTIONS
 // ═══════════════════════════════════════
 function onFoodInput(val){
-  fSearch=val;fSuggs=val.length>=2?searchFood(val):[];
+  fSearch=val;fSuggs=val.length>=1?searchFood(val):[];
   const box=document.getElementById('fsugg-box');if(!box)return;
   if(!fSuggs.length){box.innerHTML='';return}
-  box.innerHTML=`<div class="fsugg">${fSuggs.map((f,i)=>`<div class="fsugg-item" onclick="selectFS(${i})">
-    <div><div style="font-size:13px;font-weight:700">${f.n}</div><div style="font-size:10px;color:var(--t3)">${f.cat} · ${f.cal} kcal / ${f.std}${f.unit}</div></div>
-    <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;color:var(--ac)">${f.cal}</div>
-  </div>`).join('')}</div>`;
+  box.innerHTML=`<div class="fsugg">${fSuggs.map((f,i)=>{
+    // Highlight matching text
+    const hl=f.n.replace(new RegExp('('+val.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi'),'<span style="color:var(--ac)">$1</span>');
+    return`<div class="fsugg-item" onclick="selectFS(${i})">
+    <div style="flex:1">
+      <div style="font-size:13px;font-weight:700">${hl}</div>
+      <div style="font-size:10px;color:var(--t3)">${f.cat} · ${f.std}${f.unit}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'Fraunces',serif;font-size:15px;font-style:italic;color:var(--ac)">${f.cal}</div>
+      <div style="font-size:9px;color:var(--t3)">kcal</div>
+    </div>
+  </div>`;}).join('')}</div>`;
 }
 function onFoodKey(e){if(e.key==='Enter'&&fSuggs.length)selectFS(0)}
 function selectFS(i){
