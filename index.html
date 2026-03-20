@@ -1376,20 +1376,17 @@ function buildAnalytics(){
 
 function buildSettings(){
   const b=S.body||{};
-  const th=T(),ac=A();
-  const secs=[{l:'Physical',tasks:S.pt,key:'pt',c:'#e8c87a',sec:'ph'},{l:'Mental',tasks:S.mt,key:'mt',c:'#6aaad8',sec:'me'},{l:'Family',tasks:S.ft,key:'ft',c:'#5db87a',sec:'fa'}];
-
-  const row=(l,v)=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-top:1px solid #ffffff0d"><span style="font-size:13px;font-weight:700;color:#c4b89a">${l}</span><span style="font-size:13px;font-weight:700;color:#7a6e5a">${v}</span></div>`;
+  const secs=[{l:'Physical',tasks:S.pt,key:'pt',c:'#e8c87a'},{l:'Mental',tasks:S.mt,key:'mt',c:'#6aaad8'},{l:'Family',tasks:S.ft,key:'ft',c:'#5db87a'}];
 
   return `<div style="padding:12px 12px 0">
 
     <!-- Profile card -->
-    <div class="dc" style="margin-bottom:8px;padding:0;overflow:hidden">
+    <div class="dc" style="margin-bottom:8px;padding:0">
       <div style="padding:16px 14px;display:flex;align-items:center;gap:14px">
-        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#e8c87a,#c4a050);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:22px;font-style:italic;color:#0c0a08;font-weight:300;flex-shrink:0">${(b.cw||'?')}</div>
+        <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#e8c87a,#c4a050);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:20px;font-style:italic;color:#0c0a08;flex-shrink:0">${b.cw||'?'}</div>
         <div>
           <div style="font-family:'Fraunces',serif;font-size:20px;font-style:italic;color:#f2ede6">Anant Raj Saini</div>
-          <div style="font-size:11px;color:#7a6e5a;margin-top:2px">Perm State Medical University · Russia</div>
+          <div style="font-size:11px;color:#7a6e5a;margin-top:2px">Perm State · Russia</div>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid #ffffff0d">
@@ -1401,79 +1398,87 @@ function buildSettings(){
       </div>
     </div>
 
-    <!-- Theme -->
+    <!-- Appearance -->
     <div class="sec-lbl" style="margin-bottom:8px">Appearance</div>
     <div class="dc" style="margin-bottom:8px;padding:14px">
       <div style="font-size:7px;font-weight:800;letter-spacing:2px;color:#7a6e5a;margin-bottom:10px">THEME</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        ${Object.entries(THEMES).map(([k,t])=>`<div onclick="haptic();S.tk='${k}';save();applyTheme();reRenderSettings()" style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
-          <div style="width:34px;height:34px;border-radius:50%;background:${t.bg};border:2px solid ${S.tk===k?'var(--ac)':'#ffffff18'};transform:scale(${S.tk===k?'1.15':'1'});transition:all .2s var(--spring);position:relative;overflow:hidden">
-            ${t.cls&&t.cls.includes('glass')?'<div style="position:absolute;inset:0;background:linear-gradient(135deg,#dce8ff,#ffdcec)"></div>':''}
+        ${Object.entries(THEMES).map(([k,t])=>`
+        <div onclick="haptic();S.tk='${k}';save();applyTheme();reRenderSettings()" style="display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer">
+          <div style="width:34px;height:34px;border-radius:50%;background:${t.bg};border:2.5px solid ${S.tk===k?'var(--ac)':'#ffffff18'};transform:scale(${S.tk===k?1.15:1});transition:all .2s;position:relative;overflow:hidden">
             <div style="position:absolute;bottom:0;left:0;right:0;height:40%;background:${t.p2||t.bg}"></div>
           </div>
           <div style="font-size:8px;font-weight:700;color:${S.tk===k?'var(--ac)':'#7a6e5a'}">${t.n}</div>
         </div>`).join('')}
       </div>
-      <div style="font-size:7px;font-weight:800;letter-spacing:2px;color:#7a6e5a;margin-bottom:10px">ACCENT COLOR</div>
+      <div style="font-size:7px;font-weight:800;letter-spacing:2px;color:#7a6e5a;margin-bottom:10px">ACCENT</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${Object.entries(ACCENTS).map(([k,a])=>`<div onclick="haptic();S.ak='${k}';save();applyTheme();reRenderSettings()" style="width:28px;height:28px;border-radius:50%;background:${a.p};border:2px solid ${S.ak===k?'#fff':'transparent'};cursor:pointer;transform:scale(${S.ak===k?'1.15':'1'});transition:all .2s var(--spring);outline-offset:2px"></div>`).join('')}
+        ${Object.entries(ACCENTS).map(([k,a])=>`
+        <div onclick="haptic();S.ak='${k}';save();applyTheme();reRenderSettings()" style="width:28px;height:28px;border-radius:50%;background:${a.p};border:2.5px solid ${S.ak===k?'#fff':'transparent'};cursor:pointer;transform:scale(${S.ak===k?1.15:1});transition:all .2s"></div>`).join('')}
       </div>
     </div>
 
-    <!-- Body goals -->
+    <!-- Body goals — WITH SAVE BUTTON -->
     <div class="sec-lbl" style="margin-bottom:8px">Body & Goals</div>
-    <div class="dc" style="margin-bottom:8px;padding:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${[{id:'bh',l:'Height (cm)',t:'number',v:b.h||170},{id:'bw',l:'Current (kg)',t:'number',v:b.cw||70},{id:'bg',l:'Goal (kg)',t:'number',v:b.gw||65},{id:'bwks',l:'Weeks',t:'number',v:b.wks||12}].map(inp=>`
+    <div class="dc" style="margin-bottom:8px;padding:14px" id="body-card">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        ${[{id:'bh',l:'Height (cm)',v:b.h||170},{id:'bw',l:'Weight (kg)',v:b.cw||70},{id:'bg',l:'Goal (kg)',v:b.gw||65},{id:'bwks',l:'Timeline (wks)',v:b.wks||12}].map(inp=>`
         <div>
           <div style="font-size:8px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:5px">${inp.l.toUpperCase()}</div>
-          <input id="${inp.id}" type="${inp.t}" class="binp" value="${inp.v}" onblur="saveBodyField('${inp.id}')"/>
+          <input id="${inp.id}" type="number" class="binp" value="${inp.v}"/>
         </div>`).join('')}
       </div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button onclick="haptic();saveBodySex('male')" style="flex:1;padding:9px;border-radius:12px;border:1px solid ${b.sex!=='female'?'var(--ac)':'#ffffff18'};background:${b.sex!=='female'?'var(--ac)15':'transparent'};color:${b.sex!=='female'?'var(--ac)':'#7a6e5a'};font-size:12px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">♂ Male</button>
-        <button onclick="haptic();saveBodySex('female')" style="flex:1;padding:9px;border-radius:12px;border:1px solid ${b.sex==='female'?'var(--ac)':'#ffffff18'};background:${b.sex==='female'?'var(--ac)15':'transparent'};color:${b.sex==='female'?'var(--ac)':'#7a6e5a'};font-size:12px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">♀ Female</button>
+      <!-- Sex toggle -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="haptic();tempSex='male';document.getElementById('btn-male').style.borderColor='var(--ac)';document.getElementById('btn-male').style.background='var(--ac)15';document.getElementById('btn-male').style.color='var(--ac)';document.getElementById('btn-fem').style.borderColor='#ffffff18';document.getElementById('btn-fem').style.background='transparent';document.getElementById('btn-fem').style.color='#7a6e5a'" id="btn-male" style="flex:1;padding:9px;border-radius:12px;border:1px solid ${b.sex!=='female'?'var(--ac)':'#ffffff18'};background:${b.sex!=='female'?'var(--ac)15':'transparent'};color:${b.sex!=='female'?'var(--ac)':'#7a6e5a'};font-size:12px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:all .2s">♂ Male</button>
+        <button onclick="haptic();tempSex='female';document.getElementById('btn-fem').style.borderColor='var(--ac)';document.getElementById('btn-fem').style.background='var(--ac)15';document.getElementById('btn-fem').style.color='var(--ac)';document.getElementById('btn-male').style.borderColor='#ffffff18';document.getElementById('btn-male').style.background='transparent';document.getElementById('btn-male').style.color='#7a6e5a'" id="btn-fem" style="flex:1;padding:9px;border-radius:12px;border:1px solid ${b.sex==='female'?'var(--ac)':'#ffffff18'};background:${b.sex==='female'?'var(--ac)15':'transparent'};color:${b.sex==='female'?'var(--ac)':'#7a6e5a'};font-size:12px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;transition:all .2s">♀ Female</button>
       </div>
-      <div style="margin-top:12px">
-        <div style="font-size:8px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:8px">ACTIVITY LEVEL</div>
-        <div style="display:flex;flex-direction:column;gap:5px">
-          ${[['sedentary','Sedentary','Desk job'],['light','Light','1-2x/week'],['moderate','Moderate','3-5x/week'],['active','Active','6-7x/week'],['athlete','Athlete','2x/day']].map(([k,l,s])=>`
-          <div onclick="haptic();S.body=S.body||{};S.body.act='${k}';save();reRenderSettings()" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;border:1px solid ${b.act===k?'var(--ac)30':'#ffffff0d'};background:${b.act===k?'var(--ac)08':'transparent'};cursor:pointer;transition:all .15s">
-            <div>
-              <div style="font-size:13px;font-weight:700;color:${b.act===k?'var(--ac)':'#c4b89a'}">${l}</div>
-              <div style="font-size:10px;color:#7a6e5a">${s}</div>
-            </div>
-            ${b.act===k?'<div style="width:8px;height:8px;border-radius:50%;background:var(--ac)"></div>':''}
-          </div>`).join('')}
-        </div>
+      <!-- Activity -->
+      <div style="font-size:8px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:8px">ACTIVITY LEVEL</div>
+      <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">
+        ${[['sedentary','Sedentary','Desk job, little exercise'],['light','Light Active','1-2x per week'],['moderate','Moderate','3-5x per week'],['active','Very Active','6-7x per week'],['athlete','Athlete','Intense, 2x daily']].map(([k,l,s])=>`
+        <div onclick="haptic();document.querySelectorAll('.act-opt').forEach(x=>{x.style.borderColor='#ffffff0d';x.style.background='transparent'});this.style.borderColor='var(--ac)30';this.style.background='var(--ac)08';tempAct='${k}'" class="act-opt" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:12px;border:1px solid ${b.act===k?'var(--ac)30':'#ffffff0d'};background:${b.act===k?'var(--ac)08':'transparent'};cursor:pointer;transition:all .15s">
+          <div>
+            <div style="font-size:13px;font-weight:700;color:${b.act===k?'var(--ac)':'#c4b89a'}">${l}</div>
+            <div style="font-size:10px;color:#7a6e5a">${s}</div>
+          </div>
+          ${b.act===k?'<div style="width:8px;height:8px;border-radius:50%;background:var(--ac)"></div>':''}
+        </div>`).join('')}
       </div>
-      ${b.cw&&b.h?`<div style="margin-top:12px;padding:12px;background:#1e1a16;border-radius:14px;border:1px solid #ffffff0d">${buildBodyResults(b)}</div>`:''}
+      <!-- BIG SAVE BUTTON -->
+      <button onclick="haptic('medium');saveAllBodyGoals()" style="width:100%;padding:14px;border-radius:16px;border:none;background:var(--ac);color:#0c0a08;font-size:15px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;letter-spacing:.3px">Save Body Goals</button>
+      <!-- Results preview -->
+      <div id="body-results-preview" style="margin-top:12px">
+        ${b.cw&&b.h?buildBodyResultsInline(b):''}
+      </div>
     </div>
 
     <!-- Wellness goals -->
     <div class="sec-lbl" style="margin-bottom:8px">Wellness Goals</div>
     <div class="dc" style="margin-bottom:8px;padding:14px">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
         <div>
           <div style="font-size:8px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:5px">SLEEP GOAL (H)</div>
-          <input id="slg" type="number" class="binp" value="${S.slgoal||8}" min="4" max="12" onblur="if(this.value>3&&this.value<14){S.slgoal=+this.value;save()}"/>
+          <input id="slg" type="number" class="binp" value="${S.slgoal||8}" min="4" max="12"/>
         </div>
         <div>
           <div style="font-size:8px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:5px">WATER GOAL (L)</div>
-          <input id="wg" type="number" step="0.25" class="binp" value="${S.wgoal||2}" min="0.5" max="6" onblur="if(this.value>=0.5){S.wgoal=+this.value;save()}"/>
+          <input id="wg" type="number" step="0.25" class="binp" value="${S.wgoal||2}" min="0.5" max="6"/>
         </div>
       </div>
+      <button onclick="haptic('medium');saveWellnessGoals()" style="width:100%;padding:12px;border-radius:14px;border:none;background:var(--ac);color:#0c0a08;font-size:14px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">Save Wellness Goals</button>
     </div>
 
-    <!-- Tasks -->
+    <!-- Habits -->
     <div class="sec-lbl" style="margin-bottom:8px">Daily Habits</div>
     ${secs.map(sec=>`
-    <div class="dc" style="margin-bottom:8px;padding:0;overflow:visible">
+    <div class="dc" style="margin-bottom:8px;padding:0">
       <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px">
         <div style="font-size:8px;font-weight:800;letter-spacing:2px;color:${sec.c}">${sec.l.toUpperCase()}</div>
         <button onclick="haptic();addTask('${sec.key}')" style="padding:5px 12px;border-radius:10px;border:none;background:${sec.c};color:#0c0a08;font-size:11px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">+ Add</button>
       </div>
-      ${S[sec.key].map((t,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid #ffffff0d">
+      ${S[sec.key].map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid #ffffff0d">
         <span style="font-size:15px">${t.i}</span>
         <span style="font-size:13px;font-weight:700;color:#c4b89a;flex:1">${t.l}</span>
         <button onclick="haptic();delTask('${sec.key}',${i})" style="background:none;border:none;color:#7a6e5a;cursor:pointer;font-size:18px;padding:0 4px">×</button>
@@ -1489,31 +1494,74 @@ function buildSettings(){
           <div style="position:absolute;top:3px;${S.pe?'right:3px':'left:3px'};width:20px;height:20px;border-radius:50%;background:#fff;transition:all .25s var(--spring)"></div>
         </div>
       </div>
-      ${S.pe?`<div style="padding:0 14px 14px;border-top:1px solid #ffffff0d">
-        <button onclick="haptic();showChangePIN()" class="btn-dark btn-full" style="margin-top:10px">Change PIN</button>
-      </div>`:''}
+      ${S.pe?`<div style="padding:0 14px 14px;border-top:1px solid #ffffff0d"><button onclick="haptic();showChangePIN()" style="width:100%;padding:10px;border-radius:12px;border:1px solid #ffffff18;background:transparent;color:#c4b89a;font-size:13px;font-weight:700;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;margin-top:10px">Change PIN</button></div>`:''}
     </div>
 
     <!-- Data -->
     <div class="sec-lbl" style="margin-bottom:8px">Data</div>
     <div class="dc" style="margin-bottom:8px;padding:14px;display:flex;flex-direction:column;gap:8px">
-      <button onclick="haptic();exportData()" style="padding:11px;border-radius:12px;border:none;background:#e8c87a;color:#0c0a08;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">⬇ Export Backup</button>
-      <label style="padding:11px;border-radius:12px;border:1px solid #ffffff18;background:transparent;color:#c4b89a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;text-align:center;display:block">⬆ Import Backup<input type="file" accept=".json" style="display:none" onchange="importData(event)"/></label>
-      <button onclick="haptic();generatePDFReport()" style="padding:11px;border-radius:12px;border:1px solid #5db87a35;background:#5db87a12;color:#5db87a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">📄 Health Report</button>
-      <button onclick="haptic();showReport()" style="padding:11px;border-radius:12px;border:1px solid #ffffff18;background:transparent;color:#7a6e5a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">◈ Monthly Summary</button>
+      <button onclick="haptic();exportData()" style="padding:12px;border-radius:12px;border:none;background:#e8c87a;color:#0c0a08;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">⬇ Export Backup</button>
+      <label style="padding:12px;border-radius:12px;border:1px solid #ffffff18;background:transparent;color:#c4b89a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif;text-align:center;display:block">⬆ Import Backup<input type="file" accept=".json" style="display:none" onchange="importData(event)"/></label>
+      <button onclick="haptic();generatePDFReport()" style="padding:12px;border-radius:12px;border:1px solid #5db87a35;background:#5db87a12;color:#5db87a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">📄 Health Report</button>
+      <button onclick="haptic();showReport()" style="padding:12px;border-radius:12px;border:1px solid #ffffff18;background:transparent;color:#7a6e5a;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">◈ Monthly Summary</button>
     </div>
-
-    <!-- Danger zone -->
     <div class="dc" style="margin-bottom:8px;padding:14px">
-      <button onclick="haptic('heavy');if(confirm('Reset all data?')){localStorage.clear();location.reload()}" style="width:100%;padding:11px;border-radius:12px;border:1px solid #e05a4835;background:#e05a4812;color:#e05a48;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">🗑 Reset All Data</button>
+      <button onclick="haptic('heavy');if(confirm('Reset all data? Cannot be undone.')){localStorage.clear();location.reload()}" style="width:100%;padding:12px;border-radius:12px;border:1px solid #e05a4835;background:#e05a4812;color:#e05a48;font-size:13px;font-weight:800;cursor:pointer;font-family:'Cabinet Grotesk',sans-serif">🗑 Reset All Data</button>
     </div>
 
-    <div style="text-align:center;padding:12px 0 4px">
-      <div style="font-family:'Fraunces',serif;font-size:18px;font-style:italic;color:#7a6e5a">W·OS</div>
+    <div style="text-align:center;padding:16px 0 4px">
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-style:italic;color:#7a6e5a">W·OS</div>
       <div style="font-size:10px;color:#7a6e5a;margin-top:2px">Made with ❤️ by Anant Raj Saini</div>
     </div>
     <div style="height:20px"></div>`;
 }
+
+// temp vars for settings form
+let tempSex=null,tempAct=null;
+
+function saveAllBodyGoals(){
+  const h=parseFloat(document.getElementById('bh')?.value)||170;
+  const cw=parseFloat(document.getElementById('bw')?.value)||70;
+  const gw=parseFloat(document.getElementById('bg')?.value)||65;
+  const wks=parseInt(document.getElementById('bwks')?.value)||12;
+  const sex=tempSex||(S.body?.sex||'male');
+  const act=tempAct||(S.body?.act||'moderate');
+  S.body={h,cw,gw,wks,sex,act};
+  const goals=calcBodyGoals(S.body);
+  S.calgoal=Math.max(1200,goals.targetCal);
+  save();
+  haptic('success');
+  // Show success flash
+  const btn=document.querySelector('#body-card button[onclick*="saveAllBodyGoals"]');
+  if(btn){const orig=btn.textContent;btn.textContent='✓ Saved!';btn.style.background='#5db87a';setTimeout(()=>{btn.textContent=orig;btn.style.background='var(--ac)';},1800);}
+  const preview=document.getElementById('body-results-preview');
+  if(preview)preview.innerHTML=buildBodyResultsInline(S.body);
+}
+
+function saveWellnessGoals(){
+  const sl=parseFloat(document.getElementById('slg')?.value)||8;
+  const wg=parseFloat(document.getElementById('wg')?.value)||2;
+  if(sl>3&&sl<14)S.slgoal=sl;
+  if(wg>=0.5&&wg<=6)S.wgoal=wg;
+  save();
+  haptic('success');
+  const btn=document.querySelector('[onclick*="saveWellnessGoals"]');
+  if(btn){const orig=btn.textContent;btn.textContent='✓ Saved!';btn.style.background='#5db87a';setTimeout(()=>{btn.textContent=orig;btn.style.background='var(--ac)';},1800);}
+}
+
+function buildBodyResultsInline(b){
+  if(!b?.cw||!b?.h)return'';
+  const g=calcBodyGoals(b);
+  return`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    ${[['BMR',g.bmr+' kcal'],['TDEE',g.tdee+' kcal'],['Target',g.targetCal+' kcal/day'],['BMI',g.bmi+' — '+g.bmiCat],['Change',g.weeklyChange+'kg/wk'],['Timeline',b.wks+'wks']].map(([l,v])=>`
+    <div style="background:#1e1a16;border:1px solid #ffffff0d;border-radius:10px;padding:8px 10px">
+      <div style="font-size:7px;font-weight:800;letter-spacing:1.5px;color:#7a6e5a;margin-bottom:2px">${l.toUpperCase()}</div>
+      <div style="font-size:12px;font-weight:700;color:#e8c87a">${v}</div>
+    </div>`).join('')}
+  </div>`;
+}
+
+
 function buildBodyResults(b){
   if(!b.cw||!b.h||!b.gw||!b.wks)
     return `<div style="padding:10px;background:#ffffff05;border-radius:var(--r8);text-align:center;font-size:12px;color:var(--t3)">Fill fields above to see your plan ↑</div>`;
